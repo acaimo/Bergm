@@ -1,0 +1,55 @@
+\name{bgof}
+\alias{bgof}
+\title{
+Bayesian goodness-of-fit diagnostics
+}
+\description{
+Calculates summaries for degree, minimum geodesic distances, and edge-wise shared partner distributions to diagnose the Bayesian goodness-of-fit of exponential random graph models.
+}
+\usage{
+bgof(x, 
+     directed = FALSE, 
+     sample.size=100,
+     aux.iters = 10000, 
+     n.deg = NULL, 
+     n.dist = NULL, 
+     n.esp = NULL, 
+     n.ideg = NULL, 
+     n.odeg = NULL,
+     ...)
+}
+\arguments{
+  \item{x}{
+an \code{R} object of class \code{bergm}.
+}
+  \item{directed}{
+logical; TRUE if the observed graph is directed.
+}
+  \item{sample.size}{
+count; number of networks to be simulated and compared to the observed network.
+}
+  \item{aux.iters}{
+count; number of iterations used for network simulation.
+}
+  \item{n.deg}{
+count; used to plot only the first \code{n.deg}-1 degree distributions. By default no restrictions on the number of degree distributions is applied.
+}
+  \item{n.dist}{
+count; used to plot only the first \code{n.dist}-1 geodesic distances distributions. By default no restrictions on the number of geodesic distances distributions is applied.
+}
+  \item{n.esp}{
+count; used to plot only the first \code{n.esp}-1 edge-wise shared partner distributions. By default no restrictions on the number of edge-wise shared partner distributions is applied.
+}
+  \item{n.ideg}{
+count; used to plot only the first \code{n.ideg}-1 in-degree distributions. By default no restrictions on the number of in-degree distributions is applied.
+}
+  \item{n.odeg}{
+count; used to plot only the first \code{n.odeg}-1 out-degree distributions. By default no restrictions on the number of out-degree distributions is applied.
+}
+  \item{...}{
+additional arguments, to be passed to lower-level functions.
+}
+}
+\seealso{
+\code{\link{bergm}}.
+}
