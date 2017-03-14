@@ -1,3 +1,86 @@
+#' Bayesian goodness-of-fit diagnostics for ERGMs
+#'
+#' Function to calculate summaries for degree, 
+#' minimum geodesic distances, 
+#' and edge-wise shared partner distributions 
+#' to diagnose the Bayesian goodness-of-fit of 
+#' exponential random graph models.
+#'
+#' @param x an \code{R} object of class \code{bergm} or 
+#' \code{calibrate.bergm}.
+#'
+#' @param directed logical; TRUE if the observed graph is directed.
+#' 
+#' @param sample.size count; number of networks 
+#' to be simulated and compared to the observed network.
+#' 
+#' @param aux.iters count; number of iterations used for network simulation.
+#' 
+#' @param n.deg count; used to plot only the first 
+#' \code{n.deg}-1 degree distributions. 
+#' By default no restrictions on the number of degree 
+#' distributions is applied.
+#' 
+#' @param n.dist count; used to plot only the first 
+#' \code{n.dist}-1 geodesic distances distributions. 
+#' By default no restrictions on the number of geodesic 
+#' distances distributions is applied.
+#' 
+#' @param n.esp count; used to plot only the first 
+#' \code{n.esp}-1 edge-wise shared partner distributions. 
+#' By default no restrictions on the number of 
+#' edge-wise shared partner distributions is applied.
+#' 
+#' @param n.ideg count; used to plot only the first 
+#' \code{n.ideg}-1 in-degree distributions. 
+#' By default no restrictions on the number of 
+#' in-degree distributions is applied.
+#' 
+#' @param n.odeg count; used to plot only the first 
+#' \code{n.odeg}-1 out-degree distributions. 
+#' By default no restrictions on the number of 
+#' out-degree distributions is applied.
+#' 
+#' @param ... additional arguments, 
+#' to be passed to lower-level functions.
+#' 
+#' @references
+#' Caimo, A. and Friel, N. (2011), 'Bayesian Inference for Exponential Random Graph Models,' 
+#' Social Networks, 33(1), 41 - 55. \url{http://arxiv.org/abs/1007.5192}
+#' 
+#' Caimo, A. and Friel, N. (2014), 'Bergm: Bayesian Exponential Random Graphs in R,' 
+#' Journal of Statistical Software, 61(2), 1 - 25. \url{jstatsoft.org/v61/i02}
+#'
+#' @examples
+#' # Load the florentine marriage network
+#' data(florentine)
+#'
+#' # Posterior parameter estimation:
+#'
+#' p.flo <- bergm(flomarriage ~ edges + kstar(2),
+#'                burn.in = 50,
+#'                aux.iters = 500,
+#'                main.iters = 500,
+#'                gamma = 1)
+#'
+#'
+#' # Bayesian goodness-of-fit test:
+#'
+#' bgof(p.flo,
+#'      aux.iters = 500,
+#'      sample.size = 50,
+#'      n.deg = 10,
+#'      n.dist = 9,
+#'      n.esp = 6)
+#'
+#'
+#' @import network
+#' @import ergm
+#'
+#' @export
+#' 
+#' @seealso \code{\link{bergm}}, \code{\link{calibrate.bergm}}.
+
 bgof <- function(x,
                  directed=FALSE,
                  sample.size=100,
@@ -9,10 +92,15 @@ bgof <- function(x,
                  n.odeg=NULL,
                  ...){
 					
-if(x$nchains > 1) x$Theta <- apply(x$Theta,2,cbind)
-
-F <- as.matrix(x$Theta[sample(dim(x$Theta)[1],sample.size),])
-
+  if (class(x) == "bergm") {
+    if (x$nchains > 1) x$Theta <- apply(x$Theta, 2, cbind)
+    F <- as.matrix(x$Theta[sample(dim(x$Theta)[1], sample.size), ])
+    
+    # From pseudo.bergm() or calibrate.bergm()  
+  } else if (class(x) == "calibrate.bergm"){
+    F <- x$Theta
+  }
+  
 if(directed==FALSE){ # undirected
 	for(i in 1:sample.size){
 		a <- gof.formula(x$formula,
