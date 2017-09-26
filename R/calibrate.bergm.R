@@ -34,8 +34,8 @@
 #' @param tunePL count; Tuning parameter for the Metropolis sampling for the pseudo-posterior estimation.
 #'
 #' @references
-#' Bouranis, L., Friel, N., and Maire, F. (2015), 'Bayesian inference for misspecified exponential
-#' random graph models,' \url{https://arxiv.org/abs/1510.00934}.
+#' Bouranis, L., Friel, N., and Maire, F. (2015). Bayesian inference for misspecified exponential
+#' random graph models. \url{https://arxiv.org/abs/1510.00934}
 #'
 #' @examples
 #' # Load the florentine marriage network
@@ -66,6 +66,7 @@
 #' @import ergm
 #' @import mvtnorm
 #' @import MCMCpack
+#' @import Matrix
 #'
 #' @export
 #'

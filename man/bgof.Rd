@@ -9,10 +9,7 @@ bgof(x, directed = FALSE, sample.size = 100, aux.iters = 10000,
   n.odeg = NULL, ...)
 }
 \arguments{
-\item{x}{an \code{R} object of class \code{bergm} or 
-\code{calibrate.bergm}.}
-
-\item{directed}{logical; TRUE if the observed graph is directed.}
+\item{directed}{logiocal; logical; TRUE if the observed graph is directed.}
 
 \item{sample.size}{count; number of networks 
 to be simulated and compared to the observed network.}
@@ -46,6 +43,8 @@ out-degree distributions is applied.}
 
 \item{...}{additional arguments, 
 to be passed to lower-level functions.}
+
+\item{x;}{an \code{R} object of class \code{bergm}, \code{pseudo.bergm} or \code{calibrate.bergm}.}
 }
 \description{
 Function to calculate summaries for degree, 
@@ -54,36 +53,12 @@ and edge-wise shared partner distributions
 to diagnose the Bayesian goodness-of-fit of 
 exponential random graph models.
 }
-\examples{
-# Load the florentine marriage network
-data(florentine)
-
-# Posterior parameter estimation:
-
-p.flo <- bergm(flomarriage ~ edges + kstar(2),
-               burn.in = 50,
-               aux.iters = 500,
-               main.iters = 500,
-               gamma = 1)
-
-
-# Bayesian goodness-of-fit test:
-
-bgof(p.flo,
-     aux.iters = 500,
-     sample.size = 50,
-     n.deg = 10,
-     n.dist = 9,
-     n.esp = 6)
-
-
-}
 \references{
-Caimo, A. and Friel, N. (2011), 'Bayesian Inference for Exponential Random Graph Models,' 
-Social Networks, 33(1), 41 - 55. \url{http://arxiv.org/abs/1007.5192}
+Caimo, A. and Friel, N. (2011), "Bayesian Inference for Exponential Random Graph Models," 
+Social Networks, 33(1), 41-55. \url{http://arxiv.org/abs/1007.5192}
 
-Caimo, A. and Friel, N. (2014), 'Bergm: Bayesian Exponential Random Graphs in R,' 
-Journal of Statistical Software, 61(2), 1 - 25. \url{jstatsoft.org/v61/i02}
+Caimo, A. and Friel, N. (2014), "Bergm: Bayesian Exponential Random Graphs in R," 
+Journal of Statistical Software, 61(2), 1-25. \url{jstatsoft.org/v61/i02}
 }
 \seealso{
 \code{\link{bergm}}, \code{\link{calibrate.bergm}}.
