@@ -8,12 +8,29 @@
 #'
 #' @param ... additional arguments, to be passed to lower-level functions.
 #'
+#' @examples
+#' # Load the florentine marriage network
+#' data(florentine)
+#'
+#' # Posterior parameter estimation:
+#'
+#' p.flo <- bergm(flomarriage ~ edges + kstar(2),
+#'                burn.in = 50,
+#'                aux.iters = 500,
+#'                main.iters = 500,
+#'                gamma = 1)
+#'
+#' # MCMC diagnostics and posterior summaries:
+#' 
+#' bergm.output(p.flo)
+#'
 #' @import coda
 #' @import ergm
 #' 
-#' @seealso \code{\link{bergm}}, \code{\link{calibrate.bergm}}.
+#' @export
+#' 
 
-bergm.output <- function (x, ...) {
+bergm.output <- function(x, ...) {
   
   if (class(x) == "bergm") {
     if (x$nchains > 1) {
@@ -25,9 +42,6 @@ bergm.output <- function (x, ...) {
     }
     
   } else FF <- mcmc(x$Theta)
-  
-  
-  
   
   cat("\n", "Posterior Density Estimate for Model: y ~", paste(x$formula[3]), "\n", "\n")
 

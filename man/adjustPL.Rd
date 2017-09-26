@@ -27,27 +27,6 @@ and <model terms> are \code{\link{ergm-terms}}.}
 Function to estimate the transformation parameters for
 adjusting the pseudolikelihood function.
 }
-\examples{
-# Load the florentine marriage network:
-data(florentine)
-
-flo.formula <- flomarriage ~ edges + kstar(2)
-
-info.adjustPL <- adjustPL(ergm.formula = flo.formula,
-                          aux.iters    = 3000, 
-                          noisy.nsim   = 50,   
-                          noisy.thin   = 50,   
-                          ladder       = 100,   
-                          estimate     = "MLE",
-                          control      = control.ergm(MCMC.samplesize=2000))
-
-# Add the output into a list:
-calibration.list <- list(Theta_MLE= info.adjustPL$Theta_MLE,
-                         Theta_PL = info.adjustPL$Theta_PL, 
-                         W        = info.adjustPL$W, 
-                         C        = info.adjustPL$C)
-                                                   
-}
 \references{
 Bouranis, L., Friel, N., and Maire, F. (2017). Bayesian model selection for exponential random graph models via
 adjusted pseudolikelihoods. \url{https://arxiv.org/abs/1706.06344}

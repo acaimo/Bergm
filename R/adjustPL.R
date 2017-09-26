@@ -30,7 +30,6 @@
 #'
 #' @export
 #'
-#' @seealso \code{\link{evidenceCJ}}, \code{\link{evidencePowerP}}.
 
 adjustPL <- function(ergm.formula,
                      aux.iters    = 3000,

@@ -51,32 +51,6 @@ and is used as the variance of the Normal proposal distribution.}
 Function to fit Bayesian exponential random graphs models
 using the approximate exchange algorithm.
 }
-\examples{
-# Load the florentine marriage network
-data(florentine)
-
-# Posterior parameter estimation:
-
-p.flo <- bergm(flomarriage ~ edges + kstar(2),
-               burn.in = 50,
-               aux.iters = 500,
-               main.iters = 500,
-               gamma = 1)
-
-# MCMC diagnostics and posterior summaries:
-
-bergm.output(p.flo)
-
-# Bayesian goodness-of-fit test:
-
-bgof(p.flo,
-     aux.iters = 500,
-     sample.size = 50,
-     n.deg = 10,
-     n.dist = 9,
-     n.esp = 6)
-
-}
 \references{
 Caimo, A. and Friel, N. (2011), "Bayesian Inference for Exponential Random Graph Models," 
 Social Networks, 33(1), 41-55. \url{http://arxiv.org/abs/1007.5192}

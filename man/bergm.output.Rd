@@ -16,3 +16,20 @@ or \code{calibrate.bergm}}
 This function returns the posterior parameter density estimate 
 and creates simple diagnostic plots for the MCMC produced from a fit.
 }
+\examples{
+# Load the florentine marriage network
+data(florentine)
+
+# Posterior parameter estimation:
+
+p.flo <- bergm(flomarriage ~ edges + kstar(2),
+               burn.in = 50,
+               aux.iters = 500,
+               main.iters = 500,
+               gamma = 1)
+
+# MCMC diagnostics and posterior summaries:
+
+bergm.output(p.flo)
+
+}
