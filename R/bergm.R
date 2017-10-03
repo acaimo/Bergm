@@ -48,10 +48,6 @@
 #' Caimo, A. and Friel, N. (2014), "Bergm: Bayesian Exponential Random Graphs in R," 
 #' Journal of Statistical Software, 61(2), 1-25. \url{jstatsoft.org/v61/i02}
 #'
-#' @import network
-#' @import ergm
-#' @import mvtnorm
-#'
 #' @export
 #'
 

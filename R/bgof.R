@@ -71,9 +71,6 @@
 #'      n.dist = 9,
 #'      n.esp = 6)
 #'
-#' @import network
-#' @import ergm
-#'
 #' @export
 #' 
 #' 

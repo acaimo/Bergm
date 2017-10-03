@@ -76,12 +76,6 @@
 #'   
 #' # Log-marginal likelihood estimate:             
 #' flo.model.logevidence <- pp.est.evidence$log.evidence
-#'                                                                                                     
-#' @import network
-#' @import ergm
-#' @import mvtnorm
-#' @import MCMCpack
-#' @import Matrix
 #'
 #' @export
 #'

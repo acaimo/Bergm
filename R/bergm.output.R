@@ -23,9 +23,6 @@
 #' # MCMC diagnostics and posterior summaries:
 #' 
 #' bergm.output(p.flo)
-#'
-#' @import coda
-#' @import ergm
 #' 
 #' @export
 #' 

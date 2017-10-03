@@ -6,6 +6,12 @@
 #' 
 #' @name Bergm-package
 #' @aliases Bergm
+#' @import ergm
+#' @import coda
+#' @import network
+#' @import mvtnorm
+#' @import MCMCpack
+#' @import Matrix
 #' @importFrom grDevices dev.new
 #' @importFrom graphics axis boxplot lines par plot title 
 #' @importFrom stats cov dbinom density glm optim quantile runif simulate var vcov

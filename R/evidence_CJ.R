@@ -73,12 +73,6 @@
 #'   
 #' # Log-marginal likelihood estimate:             
 #' flo.model.logevidence <- Chib.est.evidence$log.evidence
-#'                                                                                                     
-#' @import network
-#' @import ergm
-#' @import mvtnorm
-#' @import MCMCpack
-#' @import Matrix
 #'
 #' @export
 #'

@@ -62,12 +62,6 @@
 #'      n.dist = 9,
 #'      n.esp = 6)
 #'
-#' @import network
-#' @import ergm
-#' @import mvtnorm
-#' @import MCMCpack
-#' @import Matrix
-#'
 #' @export
 #'
 

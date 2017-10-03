@@ -78,7 +78,7 @@ bergm.output(Chib.est.evidence)
   
 # Log-marginal likelihood estimate:             
 flo.model.logevidence <- Chib.est.evidence$log.evidence
-                                                                                                    
+
 }
 \references{
 Bouranis, L., Friel, N., and Maire, F. (2017). Bayesian model selection for exponential random graph models via

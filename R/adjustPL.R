@@ -21,12 +21,6 @@
 #' @references
 #' Bouranis, L., Friel, N., and Maire, F. (2017). Bayesian model selection for exponential random graph models via
 #' adjusted pseudolikelihoods. \url{https://arxiv.org/abs/1706.06344}
-#'                                                    
-#' @import network
-#' @import ergm
-#' @import mvtnorm
-#' @import MCMCpack
-#' @import Matrix
 #'
 #' @export
 #'
