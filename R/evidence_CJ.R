@@ -1,12 +1,12 @@
-#' Marginal likelihood estimation 
+#' Evidence estimation via Chib and Jeliazkov's method
 #'
-#' Function to estimate the marginal likelihood with Chib and Jeliazkov's method, 
+#' Function to estimate the evidence (marginal likelihood) with Chib and Jeliazkov's method, 
 #' based on the adjusted pseudolikelihood function.
 #' 
-#' @param ergm.formula formula; an \code{R} formula object,
+#' @param formula formula; an \code{\link[ergm]{ergm}} formula object,
 #' of the form  <network> ~ <model terms>
-#' where <network> is a \code{\link{network}} object
-#' and <model terms> are \code{\link{ergm-terms}}.
+#' where <network> is a \code{\link[network]{network}} object
+#' and <model terms> are \code{ergm-terms}.
 #' 
 #' @param prior.mean vector; Prior means.
 #' 
@@ -28,16 +28,20 @@
 #' adjusting the pseudolikelihood function. See \code{\link[Bergm]{adjustPL}}. 
 #'
 #' @references
+#' Caimo, A., & Friel, N. (2013). Bayesian model selection for exponential random graph models. 
+#' Social Networks, 35(1), 11-24. \url{https://arxiv.org/abs/1201.2337}
+#' 
 #' Bouranis, L., Friel, N., and Maire, F. (2017). Bayesian model selection for exponential random graph models via
 #' adjusted pseudolikelihoods. \url{https://arxiv.org/abs/1706.06344}
 #'
 #' @examples
+#' \dontrun{
 #' # Load the florentine marriage network:
 #' data(florentine)
 #'
 #' flo.formula <- flomarriage ~ edges + kstar(2)
 #'
-#' info.adjustPL <- adjustPL(ergm.formula = flo.formula,
+#' info.adjustPL <- adjustPL(formula = flo.formula,
 #'                           aux.iters    = 100, 
 #'                           noisy.nsim   = 50,   
 #'                           noisy.thin   = 50,   
@@ -57,7 +61,7 @@
 #' sigma.priors <- diag(sigma,2)          
 #'                                                 
 #' # MCMC sampling and evidence estimation:
-#' Chib.est.evidence <- evidence_CJ(ergm.formula= flo.formula,
+#' Chib.est.evidence <- evidence_CJ(formula= flo.formula,
 #'                                  prior.mean   = mean.priors,   
 #'                                  prior.sigma  = sigma.priors,
 #'                                  nits         = 30000,
@@ -73,55 +77,53 @@
 #'   
 #' # Log-marginal likelihood estimate:             
 #' flo.model.logevidence <- Chib.est.evidence$log.evidence
+#'}
 #'
 #' @export
 #'
-evidence_CJ <- function(ergm.formula,
-                          prior.mean,   
-                          prior.sigma,
-                          nits,
-                          burnin,
-                          thin        = 1,
-                          num.samples = 5000,   # integer; number of samples used in the estimate
-                          tunePL      = 2,
-                          seed        = NA,
-                          calibr.info = NULL)
-  { 
-  
+evidence_CJ <- function(formula,
+                        prior.mean,   
+                        prior.sigma,
+                        nits,
+                        burnin,
+                        thin        = 1,
+                        num.samples = 5000,   # integer; number of samples used in the estimate
+                        tunePL      = 2,
+                        seed        = NA,
+                        calibr.info = NULL){ 
   #==========================
-  # Sub-routines:
+  # SUB-ROUTINES
+
   mspecs <- function(x) {
-      y       <- ergm.getnetwork(x)
-      model   <- ergm.getmodel(x, y)
+      y <- ergm.getnetwork(x)
+      model <- ergm_model(x, y)
       model$coef.names
-  }# End function
+  }
   
-  expit <- function(x) exp(x)/(1+exp(x)) 
+  expit <- function(x) exp(x) / (1 + exp(x)) 
   
   logPL <- function(theta,
                     y,
                     X,
                     weights){
-    xtheta  <- c(X%*%theta)
-    
-    p       <- expit(xtheta)
-    log.like<- sum( dbinom(weights*y, weights, expit(xtheta), log = TRUE) ) 
-    
+    xtheta  <- c(X %*% theta)
+    p <- expit(xtheta)
+    log.like <- sum(dbinom(weights * y, weights, expit(xtheta), log = TRUE)) 
     return(log.like)
-  }# End function
+  }
   
   logPL.corr <- function(theta,
                          y,
                          X,
                          weights,
                          calibr.info){
-    theta_transf <- c( calibr.info$W %*% (theta - calibr.info$Theta_MLE) + calibr.info$Theta_PL )
-    xtheta  <- c(X%*%theta_transf)
-    p       <- expit(xtheta)
-    log.like<- sum( dbinom(weights*y, weights, expit(xtheta), log = TRUE) )
     
+    theta_transf <- c( calibr.info$W %*% (theta - calibr.info$Theta_MLE) + calibr.info$Theta_PL )
+    xtheta  <- c(X %*% theta_transf)
+    #p <- expit(xtheta) # useless?
+    log.like <- sum( dbinom(weights * y, weights, expit(xtheta), log = TRUE) )
     return(log.like)
-  }# End function
+  }
   
   logPP <- function(theta,
                     y,
@@ -129,14 +131,12 @@ evidence_CJ <- function(ergm.formula,
                     weights,
                     prior.mean,   
                     prior.sigma){
-    
-    xtheta   <- c(X%*%theta)
-    p        <- expit(xtheta)
+    xtheta   <- c(X %*% theta)
+    #p        <- expit(xtheta) # useless?
     log.like <- sum( dbinom(weights*y, weights, expit(xtheta), log = TRUE))
-    log.prior<- dmvnorm(theta, mean = prior.mean, prior.sigma, log = TRUE) 
-    
+    log.prior<- dmvnorm(theta, prior.mean, prior.sigma, log = TRUE) 
     return(log.like + log.prior)
-  }# End function
+  }
   
   logPP.corr <- function(theta,
                          y,
@@ -145,19 +145,13 @@ evidence_CJ <- function(ergm.formula,
                          prior.mean,   
                          prior.sigma,
                          calibr.info){
-    
     theta_transf <- c( calibr.info$W %*% (theta - calibr.info$Theta_MLE) + calibr.info$Theta_PL )
-    
-    xtheta   <- c(X%*%theta_transf)
-    p        <- expit(xtheta)
-    log.like <- sum( dbinom(weights*y, weights, expit(xtheta), log = TRUE) )
-    
-    log.prior<- dmvnorm(theta, mean = prior.mean, prior.sigma, log = TRUE) 
-    
-    out <- log.like + log.prior
-    return(out)
-    
-  }# End function
+    xtheta <- c(X %*% theta_transf)
+    #p <- expit(xtheta) #useless?
+    log.like <- sum(dbinom(weights * y, weights, expit(xtheta), log = TRUE))
+    log.prior <- dmvnorm(theta, prior.mean, prior.sigma, log = TRUE) 
+    return(log.like + log.prior)
+  }
   
   #==========================
   Hessian.corrected.logpl <- function(theta,          
@@ -166,89 +160,80 @@ evidence_CJ <- function(ergm.formula,
                                       weights,
                                       calibr.info){
     
-    p <- exp(as.matrix(X)%*%theta)/ ( 1+exp(as.matrix(X)%*%theta) )
-    W <- Diagonal( x=as.vector( weights*p*(1-p) )) 
-    
-    Hessian <- - t( as.matrix(X) ) %*% W %*% as.matrix(X)
-    Hessian <- as.matrix(Hessian)
-    
-    return( t(calibr.info$W) %*%Hessian%*% calibr.info$W ) 
-  }# End function
+    p <- exp(as.matrix(X) %*% theta) / ( 1 + exp(as.matrix(X) %*% theta))
+    W <- Diagonal(x = as.vector( weights * p * (1 - p))) 
+    Hessian <- as.matrix(-t( as.matrix(X) ) %*% W %*% as.matrix(X))
+    return(t(calibr.info$W) %*% Hessian %*% calibr.info$W) 
+  }
   
   #==========================
-  mplesetup                 <- ergmMPLE(ergm.formula)
-  data.glm.initial          <- cbind(mplesetup$response, 
-                                     mplesetup$weights, 
-                                     mplesetup$predictor)
-  colnames(data.glm.initial)<- c("responses", 
-                                 "weights", 
-                                 colnames(mplesetup$predictor))
+  mplesetup <- ergmMPLE(formula)
+  data.glm.initial <- cbind(mplesetup$response, 
+                            mplesetup$weights, 
+                            mplesetup$predictor)
+  colnames(data.glm.initial) <- c("responses", 
+                                  "weights", 
+                                  colnames(mplesetup$predictor))
   
-  Vcov.MPLE <- vcov(glm(mplesetup$response ~ . - 1, 
+  Vcov.MPLE <- vcov(glm(mplesetup$response ~. - 1, 
                         data    = data.frame(mplesetup$predictor), 
                         weights = mplesetup$weights, 
                         family  ="binomial"))
   
-  mdims <- length(mspecs(ergm.formula))
-  
-  tune.mat.PL      <- diag(rep(tunePL, mdims))
-  B0               <- solve(prior.sigma)      
-  
-  #==========================
-  clock.start <- Sys.time() 
+  dim <- length(mspecs(formula))
+  tune.mat.PL <- diag(rep(tunePL, dim))
+  B0 <- solve(prior.sigma)      
   
   #==========================
   H <- Hessian.corrected.logpl(calibr.info$Theta_PL,          
-                               y          = data.glm.initial[,"responses"],
-                               X          = data.glm.initial[,-c(1,2)],
-                               weights    = data.glm.initial[,"weights"],
-                               calibr.info= calibr.info)
+                               y           = data.glm.initial[,"responses"],
+                               X           = data.glm.initial[, -c(1, 2)],
+                               weights     = data.glm.initial[,"weights"],
+                               calibr.info = calibr.info)
   
-  PL.prop.sigma.mat<- tune.mat.PL%*%solve( B0 - H )%*%tune.mat.PL 
+  PL.prop.sigma.mat<- tune.mat.PL %*% solve(B0 - H) %*% tune.mat.PL 
   
   #==========================
+  # Start clock:
+  clock.start <- Sys.time() 
   message("---MCMC start---")
   
   T0 <- MCMCmetrop1R(logPP.corr,
-                     theta.init = calibr.info$Theta_PL,
-                     y          = mplesetup$response,
-                     X          = mplesetup$predictor,
-                     weights    = mplesetup$weights,
-                     prior.mean = prior.mean,
-                     prior.sigma= prior.sigma,
-                     V          = PL.prop.sigma.mat,
-                     thin       = thin, 
-                     mcmc       = nits,
-                     burnin     = burnin, 
-                     calibr.info= calibr.info,
-                     seed       = seed,
-                     logfun     = TRUE)
-  
-  message("---MCMC end---")
+                     theta.init  = calibr.info$Theta_PL,
+                     y           = mplesetup$response,
+                     X           = mplesetup$predictor,
+                     weights     = mplesetup$weights,
+                     prior.mean  = prior.mean,
+                     prior.sigma = prior.sigma,
+                     V           = PL.prop.sigma.mat,
+                     thin        = thin, 
+                     mcmc        = nits,
+                     burnin      = burnin, 
+                     calibr.info = calibr.info,
+                     seed        = seed,
+                     logfun      = TRUE)
   
   #==========================
   # Info about the chain:
-  T0          <- as.mcmc( T0[(burnin+1):nits,]) 
-  AR          <- round(1-rejectionRate(T0)[1], 2)
+  T0          <- as.mcmc( T0[(burnin + 1):nits, ]) 
+  AR          <- round(1 - rejectionRate(T0)[1], 2)
   names(AR)   <- NULL
-  ess         <- round(effectiveSize(T0),0)
-  names(ess)  <- mspecs(ergm.formula)
-
-  theta.sum  <- summary(T0)
-  thetahat   <- theta.sum$statistics[,"Mean"]
-  
-  message("---Evidence estimation---")
+  ess         <- round(effectiveSize(T0), 0)
+  names(ess)  <- mspecs(formula)
+  theta.sum   <- summary(T0)
+  thetahat    <- theta.sum$statistics[, "Mean"]
+  #message("---Evidence estimation---")
   
   log.post <- logPP.corr(thetahat,
-                         y          = mplesetup$response,
-                         X          = mplesetup$predictor,
-                         weights    = mplesetup$weights,
-                         prior.mean = prior.mean,
-                         prior.sigma= prior.sigma,
-                         calibr.info= calibr.info) 
+                         y           = mplesetup$response,
+                         X           = mplesetup$predictor,
+                         weights     = mplesetup$weights,
+                         prior.mean  = prior.mean,
+                         prior.sigma = prior.sigma,
+                         calibr.info = calibr.info) 
   
-  g       <- sample(1:nrow(T0), num.samples, replace=TRUE)
-  theta.g <- T0[g,]
+  g <- sample(1:nrow(T0), num.samples, replace = TRUE)
+  theta.g <- T0[g, ]
   
   q.g <- dmvnorm(theta.g,
                  mean  = thetahat,
@@ -256,53 +241,52 @@ evidence_CJ <- function(ergm.formula,
                  log   = FALSE) 
   
   lik.star<- logPL.corr(thetahat,
-                        y          = mplesetup$response,
-                        X          = mplesetup$predictor,
-                        weights    = mplesetup$weights,
-                        calibr.info= calibr.info)
+                        y           = mplesetup$response,
+                        X           = mplesetup$predictor,
+                        weights     = mplesetup$weights,
+                        calibr.info = calibr.info)
   
   lik.g <- apply(theta.g, 1, 
                  function (i) {
                    logPL.corr(i,
-                              y          = mplesetup$response,
-                              X          = mplesetup$predictor,
-                              weights    = mplesetup$weights,
-                              calibr.info= calibr.info)
-                 }) 
+                              y           = mplesetup$response,
+                              X           = mplesetup$predictor,
+                              weights     = mplesetup$weights,
+                              calibr.info = calibr.info)
+                   }
+                 ) 
   
   alpha.g <- sapply(lik.g, function(l) min(1, exp(lik.star-l)) )
   
-  theta.j <- rmvnorm(num.samples, mean=thetahat, sigma=PL.prop.sigma.mat)
+  theta.j <- rmvnorm(num.samples, mean = thetahat, sigma = PL.prop.sigma.mat)
   lik.j   <- apply(theta.j, 1, 
                    function (i) {
                      logPL.corr(i,
-                                y          = mplesetup$response,
-                                X          = mplesetup$predictor,
-                                weights    = mplesetup$weights,
-                                calibr.info= calibr.info) 
+                                y           = mplesetup$response,
+                                X           = mplesetup$predictor,
+                                weights     = mplesetup$weights,
+                                calibr.info = calibr.info) 
                    }) 
   
-  alpha.j <- sapply(lik.j, function(l) min(1,exp(l-lik.star)))
-  pi.hat  <- mean(alpha.g*q.g)/mean(alpha.j)
+  alpha.j <- sapply(lik.j, function(l) min(1, exp(l - lik.star)))
+  pi.hat  <- mean(alpha.g * q.g) / mean(alpha.j)
   
   logEvidence <- log(calibr.info$C) + log.post - log(pi.hat)
   
   #==========================
+  # Stop clock:
   clock.end <- Sys.time()
   runtime   <- difftime(clock.end, clock.start)  
 
   #==========================
-  out <- list(Theta       = T0,
-              dim         = mdims,
-              log.evidence= logEvidence,
-              formula     = ergm.formula,
-              AR          = AR,
-              ESS         = ess,
-              dim         = mdims,
-              specs       = mspecs(ergm.formula),
-              Time        = runtime)
+  out <- list(Theta        = T0,
+              dim          = dim,
+              log.evidence = logEvidence,
+              formula      = formula,
+              AR           = AR,
+              ESS          = ess,
+              specs        = names(ess),
+              Time         = runtime)
   class(out) <- "evidence_CJ"
-  
   return(out)
-  
-}# End function
+}

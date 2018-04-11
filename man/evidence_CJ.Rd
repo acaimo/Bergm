@@ -2,16 +2,16 @@
 % Please edit documentation in R/evidence_CJ.R
 \name{evidence_CJ}
 \alias{evidence_CJ}
-\title{Marginal likelihood estimation}
+\title{Evidence estimation via Chib and Jeliazkov's method}
 \usage{
-evidence_CJ(ergm.formula, prior.mean, prior.sigma, nits, burnin, thin = 1,
+evidence_CJ(formula, prior.mean, prior.sigma, nits, burnin, thin = 1,
   num.samples = 5000, tunePL = 2, seed = NA, calibr.info = NULL)
 }
 \arguments{
-\item{ergm.formula}{formula; an \code{R} formula object,
+\item{formula}{formula; an \code{\link[ergm]{ergm}} formula object,
 of the form  <network> ~ <model terms>
-where <network> is a \code{\link{network}} object
-and <model terms> are \code{\link{ergm-terms}}.}
+where <network> is a \code{\link[network]{network}} object
+and <model terms> are \code{ergm-terms}.}
 
 \item{prior.mean}{vector; Prior means.}
 
@@ -33,16 +33,17 @@ and <model terms> are \code{\link{ergm-terms}}.}
 adjusting the pseudolikelihood function. See \code{\link[Bergm]{adjustPL}}.}
 }
 \description{
-Function to estimate the marginal likelihood with Chib and Jeliazkov's method, 
+Function to estimate the evidence (marginal likelihood) with Chib and Jeliazkov's method, 
 based on the adjusted pseudolikelihood function.
 }
 \examples{
+\dontrun{
 # Load the florentine marriage network:
 data(florentine)
 
 flo.formula <- flomarriage ~ edges + kstar(2)
 
-info.adjustPL <- adjustPL(ergm.formula = flo.formula,
+info.adjustPL <- adjustPL(formula = flo.formula,
                           aux.iters    = 100, 
                           noisy.nsim   = 50,   
                           noisy.thin   = 50,   
@@ -62,7 +63,7 @@ sigma        <- 5
 sigma.priors <- diag(sigma,2)          
                                                 
 # MCMC sampling and evidence estimation:
-Chib.est.evidence <- evidence_CJ(ergm.formula= flo.formula,
+Chib.est.evidence <- evidence_CJ(formula= flo.formula,
                                  prior.mean   = mean.priors,   
                                  prior.sigma  = sigma.priors,
                                  nits         = 30000,
@@ -78,9 +79,13 @@ bergm.output(Chib.est.evidence)
   
 # Log-marginal likelihood estimate:             
 flo.model.logevidence <- Chib.est.evidence$log.evidence
+}
 
 }
 \references{
+Caimo, A., & Friel, N. (2013). Bayesian model selection for exponential random graph models. 
+Social Networks, 35(1), 11-24. \url{https://arxiv.org/abs/1201.2337}
+
 Bouranis, L., Friel, N., and Maire, F. (2017). Bayesian model selection for exponential random graph models via
 adjusted pseudolikelihoods. \url{https://arxiv.org/abs/1706.06344}
 }

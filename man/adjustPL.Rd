@@ -4,14 +4,14 @@
 \alias{adjustPL}
 \title{Adjustment of pseudolikelihood function}
 \usage{
-adjustPL(ergm.formula, aux.iters = 3000, noisy.nsim = 50, noisy.thin = 50,
+adjustPL(formula, aux.iters = 3000, noisy.nsim = 50, noisy.thin = 50,
   ladder = 50, ...)
 }
 \arguments{
-\item{ergm.formula}{formula; an \code{R} formula object,
+\item{formula}{formula; an \code{\link[ergm]{ergm}} formula object,
 of the form  <network> ~ <model terms>
-where <network> is a \code{\link{network}} object
-and <model terms> are \code{\link{ergm-terms}}.}
+where <network> is a \code{\link[network]{network}} object
+and <model terms> are \code{ergm-terms}.}
 
 \item{aux.iters}{count; Number of proposals before any MCMC sampling is done. See \code{\link[ergm]{control.simulate.formula}}.}
 

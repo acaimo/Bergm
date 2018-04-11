@@ -2,18 +2,18 @@
 % Please edit documentation in R/calibrate.bergm.R
 \name{calibrate.bergm}
 \alias{calibrate.bergm}
-\title{Calibrating misspecified ERGMs for Bayesian parameter inference}
+\title{Calibrating misspecified Bayesian ERGMs}
 \usage{
-calibrate.bergm(ergm.formula, iters = 500, a = 0.001, alpha = 0,
+calibrate.bergm(formula, iters = 500, a = 0.001, alpha = 0,
   aux.iters = 5000, noisy.nsim = 400, noisy.thin = 50,
   prior.mean = NULL, prior.sigma = NULL, thin = 1, mcmc = 40000,
   burnin = 10000, tunePL = 1)
 }
 \arguments{
-\item{ergm.formula}{formula; an \code{R} formula object,
+\item{formula}{formula; an \code{\link[ergm]{ergm}} formula object,
 of the form  <network> ~ <model terms>
-where <network> is a \code{\link{network}} object
-and <model terms> are \code{\link{ergm-terms}}.}
+where <network> is a \code{\link[network]{network}} object
+and <model terms> are \code{ergm-terms}.}
 
 \item{iters}{count; Iterations for the Robbins-Monro stochastic approximation algorithm.}
 
@@ -45,6 +45,7 @@ to one that is approximately sampled from the intractable
 posterior distribution.
 }
 \examples{
+\dontrun{
 # Load the florentine marriage network
 data(florentine)
                                  
@@ -68,6 +69,7 @@ bgof(cpp.flo,
      n.deg = 10,
      n.dist = 9,
      n.esp = 6)
+}
 
 }
 \references{

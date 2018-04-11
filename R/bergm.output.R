@@ -4,25 +4,9 @@
 #' and creates simple diagnostic plots for the MCMC produced from a fit.
 #'
 #' @param x an \code{R} object of class \code{bergm}, \code{pseudo.bergm}, 
-#' or \code{calibrate.bergm}
+#' or \code{calibrate.bergm}.
 #'
 #' @param ... additional arguments, to be passed to lower-level functions.
-#'
-#' @examples
-#' # Load the florentine marriage network
-#' data(florentine)
-#'
-#' # Posterior parameter estimation:
-#'
-#' p.flo <- bergm(flomarriage ~ edges + kstar(2),
-#'                burn.in = 50,
-#'                aux.iters = 500,
-#'                main.iters = 500,
-#'                gamma = 1)
-#'
-#' # MCMC diagnostics and posterior summaries:
-#' 
-#' bergm.output(p.flo)
 #' 
 #' @export
 #' 
@@ -80,7 +64,9 @@ bergm.output <- function(x, ...) {
     autocorr.plot(FF[, i], auto.layout = FALSE, ...)
     
     if (x$dim > 4) seqq <- seq(4, x$dim, 4)
-    if (i %in% union(x$dim, seqq)) title(paste("MCMC output for Model: y ~", x$formula[3]), outer = TRUE)
+    if (i %in% union(x$dim, seqq)) {
+      title(paste("MCMC output for Model: y ~", x$formula[3]), outer = TRUE)
+    }
   }
   out <- list(statistics = summary(FF)$statistics,
               quantiles = summary(FF)$quantiles,
