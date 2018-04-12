@@ -33,6 +33,7 @@ adjustPL <- function(formula,
                      ...){
 
   y <- ergm.getnetwork(formula)
+  model <- ergm_model(formula, y)
   n <- dim(y)[1]
   sy <- summary(formula)
 
@@ -87,38 +88,21 @@ adjustPL <- function(formula,
   path <- seq(0, 1, length.out = ladder)
   
   #==========================
-  # post   <- lapply(list(formula), 
-  #                  FUN=function(x) {
-  #                    # ---
-  #                    y       <- ergm.getnetwork(x)
-  #                    model   <- ergm_model(x, y)
-  #                    Clist   <- ergm.Cprepare(y, model)
-  #                    control <- control.simulate.ergm(MCMC.burnin       = aux.iters, 
-  #                                                     MCMC.interval     = noisy.thin,
-  #                                                     MCMC.init.maxedges= 20000,
-  #                                                     MCMC.max.maxedges = Inf)
-  #                    
-  #                    control$MCMC.samplesize <- noisy.nsim 
-  #                    
-  #                    MHproposal <- MHproposal.ergm(object      = model, 
-  #                                                  constraints = ~., 
-  #                                                  arguments   = control$MCMC.prop.args, 
-  #                                                  nw          = y, 
-  #                                                  weights     = control$MCMC.prop.weights, 
-  #                                                  class       = "c",
-  #                                                  reference   = ~Bernoulli, 
-  #                                                  response    = NULL)
-  #                    
-  #                    list(Clist = Clist, 
-  #                         MHproposal = MHproposal, 
-  #                         control = control
-  #                    )
-  #                  }
-  # )  
-  #==========================
-  # Model and network dimensions:
-  #mdims <- length(sy) #post[[1]]$Clist$nstats
-  #==========================
+  # ---
+  Clist <- ergm.Cprepare(y, model)
+  
+  control <- control.ergm(MCMC.burnin = aux.iters,
+                          MCMC.interval = noisy.thin,
+                          MCMC.samplesize = noisy.nsim, 
+                          MCMC.init.maxedges = 20000,
+                          MCMC.max.maxedges = Inf)
+  
+  proposal <- ergm_proposal(object = ~., 
+                            constraints = ~., 
+                            arguments = control$MCMC.prop.args, 
+                            nw = y)
+  # ---
+
   #message("---Mode estimation---")
   mle <- ergm(formula,...)
   
@@ -129,12 +113,15 @@ adjustPL <- function(formula,
   
   #==========================
   # Simulate from the MLE:
-  sim.samples <- simulate(formula, 
-                          coef = mle$coef,
-                          statsonly = TRUE,
-                          nsim = noisy.nsim,
-                          control = control.simulate(MCMC.burnin = aux.iters, 
-                                                     MCMC.interval = noisy.thin))
+  # ---
+  delta <- ergm_MCMC_slave(Clist = Clist,
+                           proposal = proposal,
+                           eta = mle$coef,
+                           control = control,
+                           verbose = FALSE)$s
+  
+  sim.samples <- sweep(delta, 2, sy, '+')
+  # ---
   
   #==========================
   # Hessian of true log-posterior: 
@@ -161,21 +148,15 @@ adjustPL <- function(formula,
   #message("---Estimating log normalising constant at the MLE---")
   E <- lapply(seq_along(path)[-length(path)], function(i){
                  # ---
-                 # Monte.Carlo.samples <- ergm.mcmcslave(Clist      = post[[1]]$Clist, 
-                 #                                       MHproposal = post[[1]]$MHproposal, 
-                 #                                       eta0       = path[i]*adjust.info$Theta_MLE, 
-                 #                                       control    = post[[1]]$control, 
-                 #                                       verbose    = FALSE)$s
+                 delta <- ergm_MCMC_slave(Clist = Clist,
+                                          proposal = proposal,
+                                          eta = path[i]*adjust.info$Theta_MLE,
+                                          control = control,
+                                          verbose = FALSE)$s
+                 
+                 Monte.Carlo.samples <- sweep(delta, 2, sy, '+')
                  # ---
-                 # Monte.Carlo.samples <- sweep(Monte.Carlo.samples, 2, sy, `+`)
-                 Monte.Carlo.samples <- simulate(formula, 
-                                                 coef = path[i] * adjust.info$Theta_MLE,
-                                                 nsim = noisy.nsim,
-                                                 statsonly = TRUE,
-                                                 control = control.simulate(MCMC.burnin = aux.iters, 
-                                                                            MCMC.interval = noisy.thin,
-                                                                            MCMC.init.maxedges = 20000,
-                                                                            MCMC.max.maxedges = Inf))
+                 
                  log(mean(exp((path[i + 1] - path[i]) * 
                                 adjust.info$Theta_MLE %*% t(Monte.Carlo.samples))))
                  }

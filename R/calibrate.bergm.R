@@ -67,29 +67,43 @@
 #' @export
 #'
 
-calibrate.bergm<- function(formula,      
-                           iters       = 500,            
-                           a           = 0.001,                
-                           alpha       = 0,          
-                           aux.iters   = 5000, 
-                           noisy.nsim  = 400,  
-                           noisy.thin  = 50,   
-                           prior.mean  = NULL,        
-                           prior.sigma = NULL,      
-                           thin        = 1,     
-                           mcmc        = 4e04,  
-                           burnin      = 1e04,  
-                           tunePL      = 1){
+calibrate.bergm <- function(formula,      
+                            iters       = 500,            
+                            a           = 0.001,                
+                            alpha       = 0,          
+                            aux.iters   = 5000, 
+                            noisy.nsim  = 400,  
+                            noisy.thin  = 50,   
+                            prior.mean  = NULL,        
+                            prior.sigma = NULL,      
+                            thin        = 1,     
+                            mcmc        = 4e04,  
+                            burnin      = 1e04,  
+                            tunePL      = 1){
 
+  y       <- ergm.getnetwork(formula)
+  model   <- ergm_model(formula, y)
+  sy <- summary(formula)    
+  dim <- length(sy)
+  
+  # ---
+  Clist <- ergm.Cprepare(y, model)
+  
+  control <- control.ergm(MCMC.burnin = aux.iters,
+                          MCMC.interval = noisy.thin,
+                          MCMC.samplesize = noisy.nsim)
+  
+  proposal <- ergm_proposal(object = ~., 
+                            constraints = ~., 
+                            arguments = control$MCMC.prop.args, 
+                            nw = y)
+  # ---
+  
+  if (is.null(prior.mean)) prior.mean <- rep(0, dim)
+  if (is.null(prior.sigma)) prior.sigma <- diag(100, dim)
+  
   #=================================
   # SUB-ROUTINES
-  
-  # Obtain coefficient names for each model:
-  mspecs <- function(x) {
-    y <- ergm.getnetwork(x)
-    model <- ergm_model(x, y)
-    model$coef.names
-  }
   
   # Log pseudo-posterior:
   expit <- function(x) exp(x) / (1 + exp(x)) 
@@ -139,25 +153,8 @@ calibrate.bergm<- function(formula,
                              prior.mean,      
                              prior.sigma){     
     
-    # --- Parameters for ergm.mcmcslave():
-    # y       <- ergm.getnetwork(formula)
-    # model   <- ergm.getmodel(formula, y)
-    # Clist   <- ergm.Cprepare(y, model)
-    # control <- control.simulate.formula(MCMC.burnin   = aux.iters, 
-    #                                    MCMC.interval = noisy.thin)
-    #
-    # control$MCMC.samplesize <- noisy.nsim
-    #
-    # MHproposal <- MHproposal.ergm(object      = model, 
-    #                              constraints = ~., 
-    #                              arguments   = control$MCMC.prop.args, 
-    #                              nw          = y, 
-    #                              weights     = control$MCMC.prop.weights, 
-    #                              class       = "c",
-    #                              reference   = ~Bernoulli, 
-    #                              response    = NULL)
-    # ---
-
+    y       <- ergm.getnetwork(formula)
+    model   <- ergm_model(formula, y)
     sy <- summary(formula)    
     dim <- length(sy)
     theta <- array(0, c(dim = iters, dim))  
@@ -165,24 +162,29 @@ calibrate.bergm<- function(formula,
     
     pb <- txtProgressBar(min = 0, max = iters, style = 3)
     
+    # ---
+    Clist <- ergm.Cprepare(y, model)
+    
+    control <- control.ergm(MCMC.burnin = aux.iters,
+                            MCMC.interval = noisy.thin,
+                            MCMC.samplesize = noisy.nsim)
+    
+    proposal <- ergm_proposal(object = ~., 
+                              constraints = ~., 
+                              arguments = control$MCMC.prop.args, 
+                              nw = y)
+    # ---
+    
     for(i in 2:iters){
       
       # ---
-      #z <- ergm.mcmcslave(Clist      = Clist, 
-      #                    MHproposal = MHproposal, 
-      #                    eta0       = theta[i - 1,], 
-      #                    control    = control, 
-      #                    verbose    = FALSE)$s
+      z <- ergm_MCMC_slave(Clist = Clist,
+                           proposal = proposal,
+                           eta = theta[i - 1,],
+                           control = control,
+                           verbose = FALSE)$s
       # ---
-      sy1 <- simulate(formula, 
-                      coef = theta[i - 1,],
-                      nsim = noisy.nsim,
-                      statsonly = TRUE,
-                      control = control.simulate(MCMC.burnin = aux.iters, 
-                                                 MCMC.interval = noisy.thin))
-      
-      z <- sweep(sy1, 2, sy, `-`)
-      estgrad   <- -apply(z, 2, mean) - solve(prior.sigma, (theta[i-1,] - prior.mean))
+      estgrad <- -apply(z, 2, mean) - solve(prior.sigma, (theta[i-1,] - prior.mean))
       theta[i, ] <- theta[i - 1, ]  + ((a/i)*(alpha + estgrad))
       
       setTxtProgressBar(pb, i)
@@ -242,9 +244,7 @@ calibrate.bergm<- function(formula,
   
   #==========================
   # Use the MPLE to initialise the Robbins-Monro algorithm:
-  capture.output(rob.mon.init <- ergm(formula, 
-                                      estimate = "MLE"),
-                                      control = control.ergm(MCMC.samplesize = 1000)) 
+  rob.mon.init <- ergm(formula, estimate = "MLE", verbose = FALSE)
   sy <- summary(formula)
   
   #==========================
@@ -263,8 +263,8 @@ calibrate.bergm<- function(formula,
   theta.PLstar <- optim(par         = summary(unadj.sample)$statistics[,1],
                         fn          = log_pseudo_post_short,
                         gr          = score.logpp,
-                        lower       = rob.mon.init$coef-3,
-                        upper       = rob.mon.init$coef+3,
+                        lower       = rob.mon.init$coef - 3,
+                        upper       = rob.mon.init$coef + 3,
                         y           = mplesetup$response,
                         X           = mplesetup$predictor,
                         weights     = mplesetup$weights,
@@ -277,14 +277,16 @@ calibrate.bergm<- function(formula,
   message("---Curvature Adjustment---")
   
   #==========================
-  # Simulate graphs from \theta^{*}::
-  sim.samples <- simulate(formula, 
-                          coef = theta.star$Theta[iters, ],
-                          statsonly = TRUE,
-                          nsim = noisy.nsim,
-                          control = control.simulate(MCMC.burnin = aux.iters, 
-                                                     MCMC.interval = noisy.thin))
-
+  # Simulate from \theta^{*}::
+  # --- 
+  z <- ergm_MCMC_slave(Clist = Clist,
+                       proposal = proposal,
+                       eta = theta.star$Theta[iters, ],
+                       control = control,
+                       verbose = FALSE)$s
+  sim.samples <- sweep(z, 2, sy, '+')
+  # ---
+  
   #==========================
   # Hessian of true log-posterior: 
   Hessian.post.truelike <- -cov(sim.samples) - solve(prior.sigma)  
@@ -314,7 +316,7 @@ calibrate.bergm<- function(formula,
   # Summarize the MCMC sample:
   corrected.sample.mcmc <- mcmc(corrected.sample)
   ess <- round(effectiveSize(corrected.sample.mcmc),0)
-  names(ess) <- mspecs(formula)
+  names(ess) <- model$coef.names
   
   AR <- round(1 - rejectionRate(corrected.sample.mcmc)[1], 2)
   names(AR) <- NULL

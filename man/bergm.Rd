@@ -63,6 +63,10 @@ p.flo <- bergm(flomarriage ~ edges + kstar(2),
                main.iters = 500,
                gamma = 1)
 
+# Posterior summaries:
+
+bergm.output(p.flo)
+
 # Bayesian goodness-of-fit test:
 
 bgof(p.flo,

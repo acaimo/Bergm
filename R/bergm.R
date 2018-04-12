@@ -60,6 +60,10 @@
 #'                main.iters = 500,
 #'                gamma = 1)
 #'
+#' # Posterior summaries:
+#' 
+#' bergm.output(p.flo)
+#'
 #' # Bayesian goodness-of-fit test:
 #'
 #' bgof(p.flo,
@@ -85,23 +89,21 @@ bergm <- function (formula,
                    ...){
 
     y <- ergm.getnetwork(formula)
-    #n <- dim(y[,])[1] # useless
     model <- ergm_model(formula, y)
     sy <- summary(formula)
     dim <- length(sy)
     
     # ---
-    # Clist <- ergm.Cprepare(y, model)
-    # control <- control.simulate.formula(MCMC.burnin = aux.iters,
-    #                                     MCMC.interval = 0)
-    # control$MCMC.samplesize <- 1
-    # MHproposal <- ergm_proposal(object = formula,
-    #                             constraints = ~., 
-    #                             arguments = control$MCMC.prop.args,
-    #                             nw = y, 
-    #                             weights = control$MCMC.prop.weights, 
-    #                             class = "c",
-    #                             reference = ~Bernoulli, response = NULL)
+    Clist <- ergm.Cprepare(y, model)
+    
+    control <- control.ergm(MCMC.burnin = aux.iters,
+                            MCMC.interval = 1,
+                            MCMC.samplesize = 1)
+    
+    proposal <- ergm_proposal(object = ~., 
+                              constraints = ~., 
+                              arguments = control$MCMC.prop.args, 
+                              nw = y)
     # ---
     
     snooker <- 0
@@ -134,21 +136,14 @@ bergm <- function (formula,
                           sigma = prior.sigma,
                           log = TRUE)
             # ---
-            #delta <- ergm_MCMC_slave(Clist,
-            #                        MHproposal,
-            #                        eta0 = theta1,
-            #                        control,
-            #                        verbose = FALSE)$s
+            delta <- ergm_MCMC_slave(Clist = Clist,
+                                     proposal = proposal,
+                                     eta = theta1,
+                                     control = control,
+                                     verbose = FALSE)$s
             # ---
             
-            sy1 <- simulate(formula, 
-                            coef =  theta1,
-                            nsim = 1,
-                            statsonly = TRUE,
-                            control = control.simulate(MCMC.burnin = aux.iters, 
-                                                       MCMC.interval = 1))
-            
-            beta <- (theta[, h] - theta1) %*% t(sy1 - sy) + pr[1] - pr[2]
+            beta <- (theta[, h] - theta1) %*% t(delta) + pr[1] - pr[2]
 
             if (beta >= log(runif(1))) {
                 theta[, h] <- theta1
@@ -163,22 +158,15 @@ bergm <- function (formula,
     clock.end <- Sys.time()
     runtime   <- difftime(clock.end, clock.start) 
     
-    out = list(#Clist = Clist, 
-               #MHproposal = MHproposal, # ?
-               #control = control, # ?
-               Time = runtime,
+    out = list(Time = runtime,
                formula = formula, 
                model = model, 
-               #nnodes = n, # useless!
                specs = model$coef.names,
                dim = dim, 
                nchains = nchains, 
                stats = sy,
                Theta = Theta, 
-               AR = acc.counts / main.iters,
-               prior.mean = prior.mean, # ?
-               prior.sigma = prior.sigma, # ?
-               aux.iters = aux.iters) # ?
+               AR = acc.counts / main.iters)
     class(out) <- "bergm"
     return(out)
 }
