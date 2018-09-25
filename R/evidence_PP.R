@@ -24,12 +24,14 @@
 #' 
 #' @param temps numeric vector; Inverse temperature ladder, \eqn{t\in[0,1]}.
 #' 
-#' @param calibr.info list; Transformation parameters for
-#' adjusting the pseudolikelihood function. See \code{\link[Bergm]{adjustPL}}. 
+#' @param info.adjustPL Transformation parameters for
+#' adjusting the pseudolikelihood function \code{\link[Bergm]{adjustPL}}.
 #'
 #' @references
-#' Bouranis, L., Friel, N., and Maire, F. (2017). Bayesian model selection for exponential random graph models via
-#' adjusted pseudolikelihoods. \url{https://arxiv.org/abs/1706.06344}
+#' Bouranis, L., Friel, N., & Maire, F. (2018). Bayesian model selection for exponential 
+#' random graph models via adjusted pseudolikelihoods. 
+#' Journal of Computational and Graphical Statistics, 1-13. 
+#' \url{https://arxiv.org/abs/1706.06344}
 #'
 #' @examples
 #' \dontrun{
@@ -46,48 +48,47 @@
 #'                           estimate     = "MLE",
 #'                           control      = control.ergm(MCMC.samplesize=2000))
 #'
-#' # Add the output into a list:
-#' calibration.list <- list(Theta_MLE = info.adjustPL$Theta_MLE,
-#'                          Theta_PL  = info.adjustPL$Theta_PL, 
-#'                          W         = info.adjustPL$W, 
-#'                          C         = info.adjustPL$C)
 #'                          
 #' # Specify location and shape of prior distribution: 
-#' prior.mean  <- rep(0,2)
+#' prior.mean  <- rep(0, 2)
 #' prior.sigma <- diag(5, 2)   
-#'                                                 
-#' # MCMC sampling and evidence estimation:
-#' tempvec.powerp  <- seq(0, 1, length.out = 20)^5
 #' 
 #' pp.est.evidence <- evidence_PP(formula = flo.formula,
 #'                                prior.mean = prior.mean,   
 #'                                prior.sigma = prior.sigma,
 #'                                nits = 10000,
 #'                                burnin = 2000,
-#'                                temps = tempvec.powerp,
-#'                                calibr.info = calibration.list)
+#'                                temps = seq(0, 1, length.out = 20)^5,
+#'                                info.adjustPL = info.adjustPL)
 #'                                    
 #' # MCMC diagnostics and posterior summaries:
 #' bergm.output(pp.est.evidence)
 #'   
 #' # Log-marginal likelihood estimate:             
-#' flo.model.logevidence <- pp.est.evidence$log.evidence
+#' pp.est.evidence$log.evidence
 #'}
 #'
 #' @export
 #'
 
 evidence_PP <-function(formula,
-                           prior.mean,   
-                           prior.sigma,
-                           nits,
-                           burnin,
-                           thin = 1,
-                           tunePL = 2,
-                           seed = 1,
-                           temps = seq(0,1,length.out=50)^5,
-                           calibr.info){
+                       prior.mean,   
+                       prior.sigma,
+                       nits,
+                       burnin,
+                       thin = 1,
+                       tunePL = 2,
+                       seed = 1,
+                       temps = seq(0,1,length.out=50)^5,
+                       info.adjustPL){
+ 
   
+calibr.info <- list(Theta_MLE = info.adjustPL$Theta_MLE,
+                    Theta_PL  = info.adjustPL$Theta_PL, 
+                    W         = info.adjustPL$W, 
+                    C         = info.adjustPL$C)
+  
+   
   #==========================
   # SUB-ROUTINES
   
@@ -99,7 +100,8 @@ evidence_PP <-function(formula,
   }
   
   # 2. Log pseudo-likelihood:
-  expit <- function(x) exp(x) / (1 + exp(x)) 
+  expit <- function(x) exp(x) / (1 + exp(x))
+  
   logPL.corr <- function(theta,
                          y,
                          X,
@@ -107,11 +109,10 @@ evidence_PP <-function(formula,
                          calibr.info){
 
     # Transform theta:
-    theta_transf <- c( calibr.info$W %*% (theta - calibr.info$Theta_MLE) + calibr.info$Theta_PL )
+    theta_transf <- c(calibr.info$W %*% (theta - calibr.info$Theta_MLE) + calibr.info$Theta_PL )
     xtheta <- c(X %*% theta_transf)
     #p <- expit(xtheta) # useless?
     log.like <- sum(dbinom(weights * y, weights, expit(xtheta), log = TRUE)) 
-    
     return(log.like)
   }
   
@@ -137,7 +138,6 @@ evidence_PP <-function(formula,
     log.prior<- dmvnorm(theta, mean = prior.mean, prior.sigma, log = TRUE) 
   
     return(temperature * log.like + log.prior)
-    
   }
   
   score.temp.logpp <- function(theta,          
@@ -162,8 +162,7 @@ evidence_PP <-function(formula,
     
   }
   
-  #==========================
-  # Hessian of corrected log pseudo-likelihood:
+  # 4. Hessian of corrected log pseudo-likelihood:
   Hessian.corrected.logpl <- function(theta,          
                                       y,
                                       X,
@@ -181,6 +180,7 @@ evidence_PP <-function(formula,
   }
   
   #==========================
+  
   # Get data in aggregated format:
   mplesetup <- ergmMPLE(formula)
   data.glm.initial <- cbind(mplesetup$response, 
@@ -204,7 +204,7 @@ evidence_PP <-function(formula,
   tune.mat.PL <- diag(rep(tunePL, dim))
   B0 <- solve(prior.sigma)    
   
-  H <- Hessian.corrected.logpl(calibr.info$Theta_PL,          
+  H <- Hessian.corrected.logpl(theta = calibr.info$Theta_PL,          
                                y = data.glm.initial[,"responses"],
                                X = data.glm.initial[,-c(1,2)],
                                weights = data.glm.initial[,"weights"],

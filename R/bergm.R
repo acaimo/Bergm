@@ -39,13 +39,6 @@
 #' If the model is one-dimensional, \code{sigma.espilon} = \code{gamma}
 #' and is used as the variance of the Normal proposal distribution.
 #'
-#' @param seed count;
-#' random number seed for the Bergm estimation.
-#'
-#' @param startVals numeric matrix;
-#' Starting values for the parameter estimation. startVals requires a matrix with parameters by number of chains. If nchains == NULL, nchains is equal to 2 * the number of parameters in the model.
-#'
-#'
 #' @param ... additional arguments, to be passed to lower-level functions.
 #'
 #' @references
@@ -100,16 +93,8 @@ bergm <- function(formula,
     dim <- length(sy)
 
     if (any(is.na(as.matrix.network(y)))) {
-      print("Network has missing data. It is advied to use missBergm() instead.")
+      print("Network has missing data. Use misBergm() instead.")
     }
-
-
-    if (is.null(seed)) {
-      set.seed(sample(1:999999,1))
-    } else {
-      set.seed(seed)
-    }
-
 
     # --- for network simulation
     Clist <- ergm.Cprepare(y, model)
@@ -133,17 +118,8 @@ bergm <- function(formula,
     	 nchains <- 1
        sigma.epsilon <- diag(gamma, dim)
     }
-
     Theta <- array(NA, c(main.iters, dim, nchains))
-
-    if (is.null(startVals)) {
-      theta <- matrix(runif(dim * nchains, min = -0.1, max = 0.1), dim, nchains)
-    } else if (nrow(startVals) != Clist$nstats || ncol(startVals) != nchains) {
-      stop("StartVals has wrong dimensions. Startvals requires a matrix with nrow = nmber of parameters and ncol = number of chains. If nchains == NULL, nchains is 2 * number of parameters.")
-    } else {
-      theta <- startVals
-    }
-
+    theta <- matrix(runif(dim * nchains, min = -0.1, max = 0.1), dim, nchains)
     acc.counts <- rep(0L, nchains)
     theta1 <- rep(NA, dim)
     tot.iters <- burn.in + main.iters
@@ -169,7 +145,7 @@ bergm <- function(formula,
                           mean = prior.mean,
                           sigma = prior.sigma,
                           log = TRUE)
-
+            
             beta <- (theta[, h] - theta1) %*% t(delta) + pr[1] - pr[2]
 
             if (beta >= log(runif(1))) {

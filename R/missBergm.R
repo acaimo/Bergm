@@ -70,6 +70,7 @@
 #' Mining 2018
 #'
 #' @examples
+#' \dontrun{
 #' # Load the florentine marriage network
 #' data(florentine)
 #'
@@ -102,7 +103,7 @@
 #'      n.deg = 10,
 #'      n.dist = 9,
 #'      n.esp = 6)
-#'
+#'}
 #' @export
 #'
 
@@ -131,7 +132,6 @@ missBergm <- function (formula,
     model <- ergm_model(formula, y)
     sy <- summary(formula)
     dim <- length(sy)
-
 
     # ---
     impNets <-  NULL

@@ -5,7 +5,8 @@
 \title{Evidence estimation via power posteriors}
 \usage{
 evidence_PP(formula, prior.mean, prior.sigma, nits, burnin, thin = 1,
-  tunePL = 2, seed = 1, temps = seq(0, 1, length.out = 50)^5, calibr.info)
+  tunePL = 2, seed = 1, temps = seq(0, 1, length.out = 50)^5,
+  info.adjustPL)
 }
 \arguments{
 \item{formula}{formula; an \code{R} formula object,
@@ -29,8 +30,8 @@ and <model terms> are \code{ergm-terms}.}
 
 \item{temps}{numeric vector; Inverse temperature ladder, \eqn{t\in[0,1]}.}
 
-\item{calibr.info}{list; Transformation parameters for
-adjusting the pseudolikelihood function. See \code{\link[Bergm]{adjustPL}}.}
+\item{info.adjustPL}{Transformation parameters for
+adjusting the pseudolikelihood function \code{\link[Bergm]{adjustPL}}.}
 }
 \description{
 Function to estimate the evidence (marginal likelihood) with Power posteriors, 
@@ -51,36 +52,30 @@ info.adjustPL <- adjustPL(formula = flo.formula,
                           estimate     = "MLE",
                           control      = control.ergm(MCMC.samplesize=2000))
 
-# Add the output into a list:
-calibration.list <- list(Theta_MLE = info.adjustPL$Theta_MLE,
-                         Theta_PL  = info.adjustPL$Theta_PL, 
-                         W         = info.adjustPL$W, 
-                         C         = info.adjustPL$C)
                          
 # Specify location and shape of prior distribution: 
-prior.mean  <- rep(0,2)
+prior.mean  <- rep(0, 2)
 prior.sigma <- diag(5, 2)   
-                                                
-# MCMC sampling and evidence estimation:
-tempvec.powerp  <- seq(0, 1, length.out = 20)^5
 
 pp.est.evidence <- evidence_PP(formula = flo.formula,
                                prior.mean = prior.mean,   
                                prior.sigma = prior.sigma,
                                nits = 10000,
                                burnin = 2000,
-                               temps = tempvec.powerp,
-                               calibr.info = calibration.list)
+                               temps = seq(0, 1, length.out = 20)^5,
+                               info.adjustPL = info.adjustPL)
                                    
 # MCMC diagnostics and posterior summaries:
 bergm.output(pp.est.evidence)
   
 # Log-marginal likelihood estimate:             
-flo.model.logevidence <- pp.est.evidence$log.evidence
+pp.est.evidence$log.evidence
 }
 
 }
 \references{
-Bouranis, L., Friel, N., and Maire, F. (2017). Bayesian model selection for exponential random graph models via
-adjusted pseudolikelihoods. \url{https://arxiv.org/abs/1706.06344}
+Bouranis, L., Friel, N., & Maire, F. (2018). Bayesian model selection for exponential 
+random graph models via adjusted pseudolikelihoods. 
+Journal of Computational and Graphical Statistics, 1-13. 
+\url{https://arxiv.org/abs/1706.06344}
 }

@@ -37,9 +37,10 @@ adjustPL <- function(formula,
   n <- dim(y)[1]
   sy <- summary(formula)
 
+  # 0. 
   expit <- function(x) exp(x) / (1 + exp(x)) 
   
-  #==========================
+  # 1. Log pseudo-likelihood
   logPL.corr <- function(theta,
                          y,
                          X,
@@ -53,8 +54,7 @@ adjustPL <- function(formula,
     return(log.like)
   }
   
-  #==========================
-  # Hessian of log pseudolikelihood:
+  # 2. Hessian of log pseudolikelihood:
   Hessian.logPL <-function(theta,          
                            y,
                            X,
@@ -69,6 +69,7 @@ adjustPL <- function(formula,
   }
   
   #==========================
+  
   # Get data in aggregated format:
   mplesetup <- ergmMPLE(formula)
   data.glm.initial <- cbind(mplesetup$response, 
@@ -84,11 +85,10 @@ adjustPL <- function(formula,
                         weights = mplesetup$weights, 
                         family= "binomial"))
 
-  #==========================
+  #
   path <- seq(0, 1, length.out = ladder)
   
-  #==========================
-  # ---
+  # -------------------------------------------------------
   Clist <- ergm.Cprepare(y, model)
   
   control <- control.ergm(MCMC.burnin = aux.iters,

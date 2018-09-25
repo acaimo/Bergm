@@ -24,15 +24,17 @@
 #' 
 #' @param seed The seed for the random number generator. See \code{\link[MCMCpack]{MCMCmetrop1R}}. 
 #' 
-#' @param calibr.info list; Transformation parameters for
-#' adjusting the pseudolikelihood function. See \code{\link[Bergm]{adjustPL}}. 
+#' @param info.adjustPL Transformation parameters for
+#' adjusting the pseudolikelihood function \code{\link[Bergm]{adjustPL}}. 
 #'
 #' @references
 #' Caimo, A., & Friel, N. (2013). Bayesian model selection for exponential random graph models. 
 #' Social Networks, 35(1), 11-24. \url{https://arxiv.org/abs/1201.2337}
 #' 
-#' Bouranis, L., Friel, N., and Maire, F. (2017). Bayesian model selection for exponential random graph models via
-#' adjusted pseudolikelihoods. \url{https://arxiv.org/abs/1706.06344}
+#' Bouranis, L., Friel, N., & Maire, F. (2018). Bayesian model selection for exponential 
+#' random graph models via adjusted pseudolikelihoods. 
+#' Journal of Computational and Graphical Statistics, 1-13. 
+#' \url{https://arxiv.org/abs/1706.06344}
 #'
 #' @examples
 #' \dontrun{
@@ -49,19 +51,12 @@
 #'                           estimate     = "MLE",
 #'                           control      = control.ergm(MCMC.samplesize=2000))
 #'
-#' # Add the output into a list:
-#' calibration.list <- list(Theta_MLE= info.adjustPL$Theta_MLE,
-#'                          Theta_PL = info.adjustPL$Theta_PL, 
-#'                          W        = info.adjustPL$W, 
-#'                          C        = info.adjustPL$C)
-#'                          
-#' # Specify location and shape of prior distribution: 
-#' mean.priors  <- rep(0,2)
-#' sigma        <- 5
-#' sigma.priors <- diag(sigma,2)          
+#' # Specify a prior distribution: 
+#' mean.priors  <- rep(0, 2)
+#' sigma.priors <- diag(5, 2)          
 #'                                                 
 #' # MCMC sampling and evidence estimation:
-#' Chib.est.evidence <- evidence_CJ(formula= flo.formula,
+#' Chib.est.evidence <- evidence_CJ(formula      = flo.formula,
 #'                                  prior.mean   = mean.priors,   
 #'                                  prior.sigma  = sigma.priors,
 #'                                  nits         = 30000,
@@ -69,14 +64,13 @@
 #'                                  thin         = 1,
 #'                                  num.samples  = 25000,
 #'                                  tunePL       = 2,
-#'                                  calibr.info  = calibration.list,
-#'                                  seed         = 1)                         
+#'                                  info.adjustPL = info.adjustPL)                         
 #'                                    
 #' # MCMC diagnostics and posterior summaries:
 #' bergm.output(Chib.est.evidence)
 #'   
 #' # Log-marginal likelihood estimate:             
-#' flo.model.logevidence <- Chib.est.evidence$log.evidence
+#' Chib.est.evidence$log.evidence
 #'}
 #'
 #' @export
@@ -90,7 +84,13 @@ evidence_CJ <- function(formula,
                         num.samples = 5000,   # integer; number of samples used in the estimate
                         tunePL      = 2,
                         seed        = NA,
-                        calibr.info = NULL){ 
+                        info.adjustPL = NULL){ 
+
+calibr.info <- list(Theta_MLE= info.adjustPL$Theta_MLE,
+                    Theta_PL = info.adjustPL$Theta_PL, 
+                    W        = info.adjustPL$W, 
+                    C        = info.adjustPL$C) 
+  
   #==========================
   # SUB-ROUTINES
 
@@ -118,7 +118,7 @@ evidence_CJ <- function(formula,
                          weights,
                          calibr.info){
     
-    theta_transf <- c( calibr.info$W %*% (theta - calibr.info$Theta_MLE) + calibr.info$Theta_PL )
+    theta_transf <- c(calibr.info$W %*% (theta - calibr.info$Theta_MLE) + calibr.info$Theta_PL )
     xtheta  <- c(X %*% theta_transf)
     #p <- expit(xtheta) # useless?
     log.like <- sum( dbinom(weights * y, weights, expit(xtheta), log = TRUE) )

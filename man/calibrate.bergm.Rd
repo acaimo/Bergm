@@ -55,7 +55,7 @@ cpp.flo <- calibrate.bergm(flomarriage ~ edges + kstar(2),
                            aux.iters = 3000,
                            mcmc = 10000,  
                            burnin = 500,
-                           tunePL = 2)
+                           tunePL = 2.5)
                                                    
 # MCMC diagnostics and posterior summaries:
 
@@ -73,6 +73,7 @@ bgof(cpp.flo,
 
 }
 \references{
-Bouranis, L., Friel, N., and Maire, F. (2015). Bayesian inference for misspecified exponential
-random graph models. \url{https://arxiv.org/abs/1510.00934}
+Bouranis, L., Friel, N., & Maire, F. (2017). Efficient Bayesian inference for exponential 
+random graph models by correcting the pseudo-posterior distribution. 
+Social Networks, 50, 98-108.\url{https://arxiv.org/abs/1510.00934}
 }
