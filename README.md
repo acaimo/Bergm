@@ -2,7 +2,7 @@
 # Bayesian Exponential Random Graph Models
 
 <p align="center">
-  ![](http://acaimo.github.io/Bergm/Bergm_logo.png)
+<img src="http://acaimo.github.io/Bergm/Bergm_logo.png" />
 </p>
 
 <h3 align="center">
