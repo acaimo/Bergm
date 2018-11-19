@@ -26,19 +26,16 @@
 #'
 
 adjustPL <- function(formula,
-                     aux.iters = 3000,
+                     aux.iters  = 3000,
                      noisy.nsim = 50,  
                      noisy.thin = 50,  
-                     ladder = 50,  
+                     ladder     = 50,  
                      ...){
 
   y <- ergm.getnetwork(formula)
   model <- ergm_model(formula, y)
-  n <- dim(y)[1]
+  n <- dim(y[,])[1]
   sy <- summary(formula)
-
-  # 0. 
-  expit <- function(x) exp(x) / (1 + exp(x)) 
   
   # 1. Log pseudo-likelihood
   logPL.corr <- function(theta,
@@ -49,8 +46,7 @@ adjustPL <- function(formula,
     
     theta_transf <- c(calibr.info$W %*% (theta - calibr.info$Theta_MLE) + calibr.info$Theta_PL) 
     xtheta   <- c(X %*% theta_transf)
-    #p        <- expit(xtheta) # useless?
-    log.like <- sum(dbinom(weights * y, weights, expit(xtheta), log = TRUE))
+    log.like <- sum(dbinom(weights * y, weights, exp(xtheta) / (1 + exp(xtheta)), log = TRUE))
     return(log.like)
   }
   
@@ -104,7 +100,7 @@ adjustPL <- function(formula,
   # ---
 
   #message("---Mode estimation---")
-  mle <- ergm(formula,...)
+  mle <- ergm(formula, ...)
   
   #==========================
   # Obtain the MPLE:
@@ -133,8 +129,8 @@ adjustPL <- function(formula,
                        weights = mplesetup$weights)
   
   #==========================
-  chol.true.Hessian <- chol(- Hessian.true.logLL)
-  chol.PL.Hessian <- chol(- HPL) 
+  chol.true.Hessian <- chol(-Hessian.true.logLL)
+  chol.PL.Hessian   <- chol(-HPL) 
   
   #==========================
   # Calculate transformation matrix W:
@@ -158,7 +154,7 @@ adjustPL <- function(formula,
                  # ---
                  
                  log(mean(exp((path[i + 1] - path[i]) * 
-                                adjust.info$Theta_MLE %*% t(Monte.Carlo.samples))))
+                               adjust.info$Theta_MLE %*% t(Monte.Carlo.samples))))
                  }
               )
   
@@ -173,10 +169,10 @@ adjustPL <- function(formula,
   #==========================
   ll.true <- c(matrix(adjust.info$Theta_MLE, nrow = 1) %*% sy) - logztheta
   
-  ll.adjpseudo <-  logPL.corr(theta = adjust.info$Theta_MLE,
-                              y = mplesetup$response,
-                              X = mplesetup$predictor,
-                              weights = mplesetup$weights,
+  ll.adjpseudo <-  logPL.corr(theta       = adjust.info$Theta_MLE,
+                              y           = mplesetup$response,
+                              X           = mplesetup$predictor,
+                              weights     = mplesetup$weights,
                               calibr.info = adjust.info)  
   
   out<- list(Theta_MLE    = mle$coef,
@@ -186,6 +182,7 @@ adjustPL <- function(formula,
              ll_true      = ll.true,
              logztheta    = logztheta,
              ll_adjpseudo = ll.adjpseudo)
+
   class(out) <- "adjustPL"
   return(out)
 }

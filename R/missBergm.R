@@ -84,7 +84,7 @@
 #'
 #'
 #' # Posterior parameter estimation:
-#' m.flo <- missBergm(flomarriage ~ edges + kstar(2),
+#' m.flo <- miss.bergm(flomarriage ~ edges + kstar(2),
 #'                burn.in = 50,
 #'                aux.iters = 500,
 #'                main.iters = 500,
@@ -107,7 +107,7 @@
 #' @export
 #'
 
-missBergm <- function (formula,
+miss.bergm <- function (formula,
                    burn.in = 100,
                    main.iters = 1000,
                    aux.iters = 1000,
@@ -215,8 +215,8 @@ missBergm <- function (formula,
                                      eta = theta1,
                                      control = control,
                                      verbose = FALSE)$s
+            
             # --- Step 3 Proposal acceptence/rejection
-
             pr <- dmvnorm(rbind(theta1, theta[, h]),
                           mean = prior.mean,
                           sigma = prior.sigma,
@@ -242,8 +242,6 @@ missBergm <- function (formula,
               model2 <- ergm_model(currentFormula, y2)
               Clist <- ergm.Cprepare(y2, model2)
             }
-
-
           }
 
         if (k > burn.in) Theta[k - burn.in, , ] <- theta
@@ -255,9 +253,7 @@ missBergm <- function (formula,
           }
         }
     }
-
-
-
+    
     if (nchains == 1) Theta <- as.matrix(Theta[, , 1])
     if (nchains > 1) Theta <- apply(Theta, 2, cbind)
 

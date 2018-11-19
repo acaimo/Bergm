@@ -1,8 +1,8 @@
 Package: Bergm
 Type: Package
 Title: Bayesian Exponential Random Graph Models
-Version: 4.2.0
-Date: 2018-09-25
+Version: 4.2.1
+Date: 2018-11-19
 Author: Alberto Caimo [aut, cre], 
         Lampros Bouranis [aut],
         Robert Krause [aut] 
