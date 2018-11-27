@@ -1,5 +1,5 @@
 
-# Bayesian Exponential Random Graph Models
+# Bayesian Exponential Random Graph Models with R
 
 
 
