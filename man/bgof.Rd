@@ -9,7 +9,7 @@ bgof(x, directed = FALSE, sample.size = 100, aux.iters = 10000,
   n.odeg = NULL, ...)
 }
 \arguments{
-\item{x}{an \code{R} object of class \code{bergm} or \code{calibrate.bergm}.}
+\item{x}{an \code{R} object of class \code{bergm}.}
 
 \item{directed}{logical; TRUE if the observed graph is directed.}
 

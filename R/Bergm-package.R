@@ -1,6 +1,6 @@
 #' Bayesian exponential random graph models
 #' 
-#' \code{Bergm} provides a range of tools for to analyse 
+#' \code{Bergm} provides a range of tools to analyse 
 #' Bayesian exponential random graph models using advanced 
 #' computational methods.
 #' 
