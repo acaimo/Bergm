@@ -57,7 +57,7 @@
 #' summary(cpp.flo)
 #' 
 #' # MCMC diagnostics plots:
-#' plot(p.flo)
+#' plot(cpp.flo)
 #' 
 #' # Bayesian goodness-of-fit test:
 #' bgof(cpp.flo,
