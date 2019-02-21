@@ -11,7 +11,7 @@ Maintainer: Alberto Caimo <acaimo.stats@gmail.com>
 Description: Set of tools to analyse Bayesian exponential random graph models.
 License: GPL (>= 2)
 Depends: ergm
-Imports: network, coda, MCMCpack, Matrix, mvtnorm
+Imports: network, coda, MCMCpack, Matrix, mvtnorm, matrixcalc
 URL: http://acaimo.github.io/Bergm/
 Encoding: UTF-8
 LazyData: true

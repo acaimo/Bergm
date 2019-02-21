@@ -12,6 +12,7 @@
 #' @import mvtnorm
 #' @import MCMCpack
 #' @import Matrix
+#' @importFrom matrixcalc is.positive.definite
 #' @importFrom grDevices dev.new
 #' @importFrom graphics axis boxplot lines par plot title 
 #' @importFrom stats cov dbinom density glm optim quantile runif simulate var vcov

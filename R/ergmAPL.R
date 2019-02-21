@@ -25,141 +25,154 @@
 #'
 #' @export
 #'
-ergmAPL <- function(formula,
-                    aux.iters   = NULL,
-                    n.aux.draws = NULL,  
-                    aux.thin    = NULL,  
-                    ladder      = NULL,  
-                    ...){
-
-  y     <- ergm.getnetwork(formula)
+ergmAPL <- function(formula, 
+                    aux.iters   = NULL, 
+                    n.aux.draws = NULL, 
+                    aux.thin    = NULL, 
+                    ladder      = NULL, 
+                    ...) 
+{
+  y <- ergm.getnetwork(formula)
   model <- ergm_model(formula, y)
-  n     <- dim(y[,])[1]
-  sy    <- summary(formula)
-  dim   <- length(sy)
+  n   <- dim(y[,])[1]
+  sy  <- summary(formula)
+  dim <- length(sy)
   
-  if (dim == 1) stop("Model dimension must be greater than 1")
-
-  if (is.null(aux.iters))   aux.iters   <- 3000
-  if (is.null(n.aux.draws)) n.aux.draws <- 50  
-  if (is.null(aux.thin))    aux.thin    <- 50  
-  if (is.null(ladder))      ladder      <- 50  
+  if (dim == 1) 
+    stop("Model dimension must be greater than 1")
+  if (is.null(aux.iters)) 
+    aux.iters <- 3000
+  if (is.null(n.aux.draws)) 
+    n.aux.draws <- 50
+  if (is.null(aux.thin)) 
+    aux.thin <- 50
+  if (is.null(ladder)) 
+    ladder <- 50
   
-  # For network simulation
-  Clist   <- ergm.Cprepare(y, model)
+  Clist <- ergm.Cprepare(y, model)
+  control <- control.ergm(MCMC.burnin = aux.iters, 
+                          MCMC.interval = aux.thin, 
+                          MCMC.samplesize = n.aux.draws, 
+                          MCMC.init.maxedges = 20000, 
+                          MCMC.max.maxedges = Inf)
+  proposal <- ergm_proposal(object = ~., constraints = ~., 
+                            arguments = control$MCMC.prop.args, nw = y)
   
-  control <- control.ergm(MCMC.burnin        = aux.iters,
-                          MCMC.interval      = aux.thin,
-                          MCMC.samplesize    = n.aux.draws, 
-                          MCMC.init.maxedges = 20000,
-                          MCMC.max.maxedges  = Inf)
-  
-  proposal <- ergm_proposal(object      = ~., 
-                            constraints = ~., 
-                            arguments   = control$MCMC.prop.args, 
-                            nw          = y)
-  
-  # SUB-ROUTINES
-  
-  adjusted_logPL <- function(theta,
-                             Y,
-                             X,
-                             weights,
-                             calibr.info){
-    
-    theta_transf <- c(calibr.info$W %*% (theta - calibr.info$Theta_MLE) + calibr.info$Theta_PL) 
-    xtheta       <- c(X %*% theta_transf)
-    log.like     <- sum(dbinom(weights * Y, weights, exp(xtheta) / (1 + exp(xtheta)), log = TRUE))
+  adjusted_logPL <- function(theta, Y, X, weights, calibr.info) {
+    theta_transf   <- c(calibr.info$W %*% (theta - calibr.info$Theta_MLE) + calibr.info$Theta_PL)
+    xtheta         <- c(X %*% theta_transf)
+    log.like       <- sum(dbinom(weights * Y, weights, exp(xtheta)/(1 + exp(xtheta)), log = TRUE))
     return(log.like)
   }
   
-  # Hessian of log pseudolikelihood:
-  Hessian_logPL <- function(theta,          
-                            X,
-                            weights){
-    
-    p <- exp(as.matrix(X) %*% theta) / (1 + exp(as.matrix(X) %*% theta))
-    W <- Diagonal(x = as.vector( weights * p * (1 - p))) 
-    Hessian <- -t( as.matrix(X) ) %*% W %*% as.matrix(X)
+  Hessian_logPL <- function(theta, X, weights) {
+    p <- exp(as.matrix(X) %*% theta)/(1 + exp(as.matrix(X) %*% 
+                                                theta))
+    W <- Diagonal(x = as.vector(weights * p * (1 - p)))
+    Hessian <- -t(as.matrix(X)) %*% W %*% as.matrix(X)
     Hessian <- as.matrix(Hessian)
-    return(Hessian) 
+    return(Hessian)
   }
   
-  # Get data in aggregated format:
   mplesetup <- ergmMPLE(formula)
   data.glm.initial <- cbind(mplesetup$response, 
                             mplesetup$weights, 
                             mplesetup$predictor)
-  colnames(data.glm.initial) <- c("responses", 
-                                  "weights", 
+  colnames(data.glm.initial) <- c("responses", "weights", 
                                   colnames(mplesetup$predictor))
-
   path <- seq(0, 1, length.out = ladder)
   
-  suppressMessages(mle  <- ergm(formula, estimate = "MLE",  verbose = FALSE, ...) )
-  suppressMessages(mple <- ergm(formula, estimate = "MPLE", verbose = FALSE) )
-
-  # Simulate from the MLE:
-  delta <- ergm_MCMC_slave(Clist    = Clist,
-                           proposal = proposal,
-                           eta      = mle$coef,
-                           control  = control,
+  suppressMessages(mle <- ergm(formula, verbose = FALSE, ...))
+  suppressMessages(mple <- ergm(formula, estimate = "MPLE", verbose = FALSE))
+  
+  delta <- ergm_MCMC_slave(Clist    = Clist, 
+                           proposal = proposal, 
+                           eta      = mle$coef, 
+                           control  = control, 
                            verbose  = FALSE)$s
-
-  sim.samples <- sweep(delta, 2, sy, '+')
+  sim.samples <- sweep(delta, 2, sy, "+")
   
-  # Hessian of true log-posterior: 
-  Hessian.true.logLL <- -cov(sim.samples)
+  H   <- -cov(sim.samples)
   
-  HPL <- Hessian_logPL(theta   = mple$coef,          
-                       X       = mplesetup$predictor,
+  HPL <- Hessian_logPL(theta   = mple$coef, 
+                       X       = mplesetup$predictor, 
                        weights = mplesetup$weights)
   
-  chol.true.Hessian <- chol(-Hessian.true.logLL)
-  chol.PL.Hessian   <- chol(-HPL)
+  #--------------------------------
+  # Round the matrices to avoid error message from is.symmetric.matrix()
+  # in is.positive.definite() due to rounding error
+  HPL <- round(HPL,5)
+  mat <- -H
+  mat <- round(mat,5)
   
-  # Calculate transformation matrix W:
-  W <- solve(chol.PL.Hessian) %*% chol.true.Hessian
-
-  adjust.info <- list(Theta_MLE = mle$coef,
-                      Theta_PL  = mple$coef,
+  if (is.positive.definite(mat) == TRUE & is.positive.definite(HPL) == TRUE) {
+    chol.HPL <- chol(-HPL)
+    chol.H   <- chol(mat)
+    W        <- solve(chol.HPL) %*% chol.H
+    
+  } else if (is.positive.definite(mat) == FALSE & is.positive.definite(HPL) == TRUE) {
+    
+    suppressWarnings( chol.H <- chol(mat, pivot = TRUE) )
+    pivot    <- attr(chol.H, "pivot")
+    oo       <- order(pivot)
+    chol.HPL <- chol(-HPL)
+    W        <- solve(chol.HPL) %*% chol.H[, oo]
+    
+  } else if (is.positive.definite(mat) == TRUE & is.positive.definite(HPL) == FALSE) {
+    chol.H <- chol(mat)
+    
+    suppressWarnings( chol.HPL <- chol(-HPL, pivot = TRUE) )
+    pivot <- attr(chol.HPL, "pivot")
+    oo    <- order(pivot)
+    W     <- solve(chol.HPL[, oo]) %*% chol.H
+    
+  } else {
+    suppressWarnings(chol.H <- chol(mat, pivot = TRUE))
+    pivot.H <- attr(chol.H, "pivot")
+    oo.H    <- order(pivot.H)
+    
+    suppressWarnings(chol.HPL <- chol(-HPL, pivot = TRUE))
+    pivot.HPL <- attr(chol.HPL, "pivot")
+    oo.HPL    <- order(pivot.HPL)
+    W         <- solve(chol.HPL[, oo.HPL]) %*% chol.H[, oo.H]
+  }
+  #--------------------------------
+  
+  adjust.info <- list(Theta_MLE = mle$coef, 
+                      Theta_PL = mple$coef, 
                       W = W)
   
-  E <- lapply(seq_along(path)[-length(path)], function(i){
-                 delta <- ergm_MCMC_slave(Clist    = Clist,
-                                          proposal = proposal,
-                                          eta      = path[i]*adjust.info$Theta_MLE,
-                                          control  = control,
-                                          verbose  = FALSE)$s
-                 
-                 Monte.Carlo.samples <- sweep(delta, 2, sy, '+')
-                 log(mean(exp((path[i + 1] - path[i]) * adjust.info$Theta_MLE %*% t(Monte.Carlo.samples))))
-                 }
-              )
+  E <- lapply(seq_along(path)[-length(path)], function(i) { 
+    delta <- ergm_MCMC_slave(Clist    = Clist, 
+                             proposal = proposal, 
+                             eta      = path[i] * adjust.info$Theta_MLE, 
+                             control  = control, 
+                             verbose  = FALSE)$s
+    Monte.Carlo.samples <- sweep(delta, 2, sy, "+")
+    log( mean( exp( (path[i + 1] - path[i]) * adjust.info$Theta_MLE %*% t(Monte.Carlo.samples) ) ) )
+  })
   
   E <- sum(unlist(E))
   
-  # Estimate log z(0) depending on the type of network:
-  if (y$gal$directed == FALSE) logz0 <- choose(n, 2) * log(2) else logz0 <- (n * (n - 1)) * log(2)
-  logztheta <- E + logz0
-               
-  #
+  if (y$gal$directed == FALSE) logz0A <- choose(n, 2) * log(2) else logz0A <- (n * (n - 1)) * log(2)
+  
+  logztheta <- E + logz0A
+  
   ll.true <- c(matrix(adjust.info$Theta_MLE, nrow = 1) %*% sy) - logztheta
   
-  ll.adjpseudo <-  adjusted_logPL(theta       = adjust.info$Theta_MLE,
-                                  Y           = mplesetup$response,
-                                  X           = mplesetup$predictor,
-                                  weights     = mplesetup$weights,
-                                  calibr.info = adjust.info)  
+  ll.adjpseudo <- adjusted_logPL(theta       = adjust.info$Theta_MLE, 
+                                 Y           = mplesetup$response, 
+                                 X           = mplesetup$predictor, 
+                                 weights     = mplesetup$weights, 
+                                 calibr.info = adjust.info)
   
-  out <- list(formula      = formula,
-              Theta_MLE    = mle$coef,
-              Theta_PL     = mple$coef,
-              W            = W,
-              C            = exp(ll.true - ll.adjpseudo),
-              ll_true      = ll.true,
-              logztheta    = logztheta,
+  out <- list(formula      = formula, 
+              Theta_MLE    = mle$coef, 
+              Theta_PL     = mple$coef, 
+              W            = W, 
+              logC         = ll.true - ll.adjpseudo, 
+              ll_true      = ll.true, 
+              logztheta    = logztheta, 
               ll_adjpseudo = ll.adjpseudo)
-
   return(out)
 }
