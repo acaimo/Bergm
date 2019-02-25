@@ -187,7 +187,7 @@ evidencePP <- function(formula,
   calibr.info <- list(Theta_MLE = info.adjustPL$Theta_MLE,
                       Theta_PL  = info.adjustPL$Theta_PL, 
                       W         = info.adjustPL$W, 
-                      C         = info.adjustPL$logC) ###
+                      logC      = info.adjustPL$logC)
 
   mplesetup <- ergmMPLE(formula)
   data.glm.initial <- cbind(mplesetup$response, 
@@ -292,11 +292,11 @@ evidencePP <- function(formula,
       
       logPL.list[[j]] <- apply(data.frame( pplist[[j]] ), 1,
                                function(x) {
-                                 adjusted_logPL(theta      = x,          
-                                                Y          = mplesetup$response,
-                                                X          = mplesetup$predictor,
-                                                weights    = mplesetup$weights,
-                                                calibr.info= calibr.info)}) 
+                                 adjusted_logPL(theta       = x,          
+                                                Y           = mplesetup$response,
+                                                X           = mplesetup$predictor,
+                                                weights     = mplesetup$weights,
+                                                calibr.info = calibr.info)}) 
     }
     
     k <- dim * (dim + 3) / 2 
@@ -339,7 +339,7 @@ evidencePP <- function(formula,
     return(cv.res.D2.mts)
   }
   pp.estimates <- ppml(cv.ell.D2 = cv.ell.D2, cv.vll.D2 = cv.vll.D2, tempvec = temps)
-  log.evidence <- calibr.info$C + pp.estimates ###
+  log.evidence <- calibr.info$logC + pp.estimates
   
   ess <- round(effectiveSize(pplist[[numtemp]]), 0)
   names(ess) <- model$coef.names

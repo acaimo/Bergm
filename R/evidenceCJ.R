@@ -173,7 +173,7 @@ evidenceCJ <- function(formula,
   calibr.info <- list(Theta_MLE = info.adjustPL$Theta_MLE,
                       Theta_PL  = info.adjustPL$Theta_PL, 
                       W         = info.adjustPL$W, 
-                      C         = info.adjustPL$logC) ###
+                      logC      = info.adjustPL$logC)
   
   #
   mplesetup <- ergmMPLE(formula)
@@ -270,7 +270,7 @@ evidenceCJ <- function(formula,
   
   alpha.j <- sapply(lik.j, function(l) min(1, exp(l - lik.star)))
   pi.hat  <- mean(alpha.g * q.g) / mean(alpha.j)
-  logEvidence <- calibr.info$C + log.post - log(pi.hat) ###
+  logEvidence <- calibr.info$logC + log.post - log(pi.hat)
   
   # Stop clock:
   clock.end <- Sys.time()
