@@ -64,12 +64,12 @@ bgof <- function(x,
                  n.odeg      = NULL,
                  ...){
 
-  F <- as.matrix(x$Theta[sample(dim(x$Theta)[1], sample.size), ])
+  FF <- as.matrix(x$Theta[sample(dim(x$Theta)[1], sample.size), ])
 
   if (directed == FALSE) { # undirected
   	for (i in 1:sample.size) {
 	  	a <- gof(x$formula,
-	  	         coef = F[i, ],
+	  	         coef = FF[i, ],
 	  	         verbose = FALSE,
 	  	         control = control.gof.formula(nsim = 1, MCMC.burnin = aux.iters))
 	  	if (i == 1) A <- as.vector(a$pobs.deg)
@@ -136,7 +136,7 @@ bgof <- function(x,
   	
   	for (i in 1:sample.size) {
   		a <- gof(x$formula,
-  		         coef = F[i,],
+  		         coef = FF[i,],
   		         verbose = FALSE,
   		         GOF = ~ idegree + odegree + espartners + distance,
   		         control = control.gof.formula(nsim = 1, MCMC.burnin = aux.iters))

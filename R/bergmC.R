@@ -36,6 +36,8 @@
 #' 
 #' @param aux.thin count; number of auxiliary iterations between network draws after the first network is drawn (Robbins-Monro). See \code{\link[ergm]{control.simulate.formula}}.
 #' 
+#' @param ... Additional arguments, to be passed to the ergm function. See \code{\link[ergm]{ergm}}.
+#' 
 #' @references 
 #' Bouranis, L., Friel, N., & Maire, F. (2017). Efficient Bayesian inference for exponential 
 #' random graph models by correcting the pseudo-posterior distribution. 
@@ -70,7 +72,6 @@
 #'
 #' @export
 #'
-
 bergmC <- function(formula, 
                    prior.mean  = NULL,
                    prior.sigma = NULL,
@@ -83,9 +84,9 @@ bergmC <- function(formula,
                    rm.a        = 0.001,                
                    rm.alpha    = 0,        
                    n.aux.draws = 400,  
-                   aux.thin    = 50){
-
-  #==========================
+                   aux.thin    = 50,
+                   ...){
+  
   y     <- ergm.getnetwork(formula)
   model <- ergm_model(formula, y)
   sy    <- summary(formula)    
@@ -94,8 +95,7 @@ bergmC <- function(formula,
   if (is.null(prior.mean))  prior.mean  <- rep(0, dim)
   if (is.null(prior.sigma)) prior.sigma <- diag(100, dim, dim)
   
-
-  # For network simulation
+  
   Clist   <- ergm.Cprepare(y, model)
   control <- control.ergm(MCMC.burnin     = aux.iters,
                           MCMC.interval   = aux.thin,
@@ -104,11 +104,7 @@ bergmC <- function(formula,
                             constraints = ~., 
                             arguments   = control$MCMC.prop.args, 
                             nw          = y)
-
-  #=================================
-  # SUB-ROUTINES
   
-  # Log pseudo-posterior:
   logpp_short <- function(theta,
                           Y,
                           X,
@@ -123,7 +119,6 @@ bergmC <- function(formula,
     return(out)
   }
   
-  # Score of the log pseudo-posterior:
   score_logPP <- function(theta,          
                           Y,
                           X,
@@ -139,8 +134,6 @@ bergmC <- function(formula,
     return(out)
   }
   
-  # Robins-Monro stochastic algorithm for finding
-  # the MAP of the true posterior.
   rm_ergm <- function(formula,
                       prior.mean,      
                       prior.sigma,
@@ -162,7 +155,7 @@ bergmC <- function(formula,
     theta <- array(0, c(dim = rm.iters, dim))  
     theta[1, ] <- init
     
-    #pb <- txtProgressBar(min = 0, max = rm.iters, style = 3)
+    #if (pb == TRUE) pb.display <- txtProgressBar(min = 0, max = rm.iters, style = 3)
     
     for (i in 2:rm.iters) {
       
@@ -171,16 +164,15 @@ bergmC <- function(formula,
                            eta      = theta[i - 1,],
                            control  = control,
                            verbose  = FALSE)$s
-
+      
       estgrad    <- -apply(z, 2, mean) - solve(prior.sigma, (theta[i - 1,] - prior.mean))
       theta[i, ] <- theta[i - 1, ]  + ((rm.a/i) * (rm.alpha + estgrad))
-      #setTxtProgressBar(pb, i)
+      #if (pb == TRUE) setTxtProgressBar(pb.display , i)
     }
     out <- list(Theta = theta) 
     return(out)
   }
   
-  # Get data in aggregated format:
   mplesetup <- ergmMPLE(formula)
   data.glm.initial <- cbind(mplesetup$response, 
                             mplesetup$weights, 
@@ -189,23 +181,19 @@ bergmC <- function(formula,
                                   "weights", 
                                   colnames(mplesetup$predictor))
   
-  # Variance-covariance matrix from MPLE:
   Vcov.MPLE <- vcov(glm(mplesetup$response ~. - 1, 
                         data    = data.frame(mplesetup$predictor), 
                         weights = mplesetup$weights, 
                         family  = "binomial"))
-
-  # Tuning the variance-covariance matrix of the proposal distribution:
+  
   Sigma.proposal <- diag(rep(V.proposal, dim), dim, dim)
   S.prop <- Sigma.proposal %*% solve((solve(prior.sigma) + solve(Vcov.MPLE))) %*% Sigma.proposal 
   
-  # Obtain the MPLE for the model of interest:
   suppressMessages( mple <- ergm(formula, estimate = "MPLE", verbose = FALSE) )
   
   message(" > MCMC start")
   clock.start <- Sys.time() 
   
-  #
   capture.output(unadj.sample <- MCMCmetrop1R(logpp_short,
                                               theta.init  = mple$coef,
                                               Y           = mplesetup$response,
@@ -222,10 +210,8 @@ bergmC <- function(formula,
   
   message(" > MAP estimation")
   
-  # Use the MPLE to initialise the Robbins-Monro algorithm:
-  suppressMessages(rob.mon.init <- ergm(formula, estimate = "MLE", verbose = FALSE))
-
-  # Estimate the MAP of the true posterior:
+  suppressMessages(rob.mon.init <- ergm(formula, verbose = FALSE, ...))
+  
   theta.star <- rm_ergm(formula, 
                         rm.iters    = rm.iters,
                         rm.a        = rm.a,
@@ -243,7 +229,7 @@ bergmC <- function(formula,
                         Clist       = Clist,
                         control     = control,
                         proposal    = proposal
-                        )
+  )
   
   theta.PLstar <- optim(par         = summary(unadj.sample)$statistics[,1],
                         fn          = logpp_short,
@@ -261,7 +247,6 @@ bergmC <- function(formula,
   
   message(" > Curvature Adjustment")
   
-  # Simulate from the unnormalised likelihood
   z <- ergm_MCMC_slave(Clist    = Clist,
                        proposal = proposal,
                        eta      = theta.star$Theta[rm.iters, ],
@@ -269,27 +254,23 @@ bergmC <- function(formula,
                        verbose  = FALSE)$s
   sim.samples <- sweep(z, 2, sy, '+')
   
-  # Hessian of true log-posterior: 
   Hessian.post.truelike <- -cov(sim.samples) - solve(prior.sigma)  
   
   chol.true.posterior <- chol(-Hessian.post.truelike)
   chol.PL.posterior   <- chol(-theta.PLstar$hessian) 
   
-  # Calculate transformation matrix W:
   W <- solve(chol.PL.posterior) %*% chol.true.posterior
   V <- solve(W)
   
-  # Correct the sample:
   corrected.sample <- t(apply(data.frame(unadj.sample), 1, 
                               function(x) {
                                 c(V %*% (unlist(x) - theta.PLstar$par ) + 
-                                  theta.star$Theta[rm.iters, ])}))
+                                    theta.star$Theta[rm.iters, ])}))
   
   clock.end <- Sys.time()
   runtime   <- difftime(clock.end, clock.start)  
   
-  # Summarize the MCMC sample:
-  FF <- mcmc(corrected.sample)
+  FF  <- mcmc(corrected.sample)
   ess <- round(effectiveSize(FF), 0)
   names(ess) <- model$coef.names
   

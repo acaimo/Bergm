@@ -121,7 +121,7 @@ bergmM <- function(formula,
       impNets <- vector("list", nImp)
     }
 
-    missingTies <- matrix(0,y$gal$n,y$gal$n)
+    missingTies <- matrix(0, y$gal$n, y$gal$n)
     missingTies[is.na(as.matrix.network(y))] <- 1
     missingTies <- as.edgelist(as.network(missingTies), n = y$gal$n)
 
