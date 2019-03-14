@@ -7,7 +7,7 @@
 evidencePP(formula, prior.mean = NULL, prior.sigma = NULL,
   aux.iters = 1000, n.aux.draws = 50, aux.thin = 50, ladder = 30,
   main.iters = 20000, burn.in = 5000, thin = 1, V.proposal = 1.5,
-  seed = NA, temps = NULL, ...)
+  seed = NA, temps = NULL, estimate = c("MLE", "CD"), ...)
 }
 \arguments{
 \item{formula}{formula; an \code{\link[ergm]{ergm}} formula object,
@@ -42,7 +42,10 @@ By default set to 1.5.}
 
 \item{temps}{numeric vector; inverse temperature ladder, \eqn{t \in [0,1]}.}
 
-\item{...}{additional arguments, to be passed to the ergm function. See \code{\link[ergm]{ergm}} and \code{\link[Bergm]{ergmAPL}}.}
+\item{estimate}{If "MLE" (the default), then an approximate maximum likelihood estimator is returned. If "CD" , the Monte-Carlo contrastive divergence estimate is returned. See \code{\link[ergm]{ergm}}.}
+
+\item{...}{additional arguments, to be passed to the ergm function. 
+See \code{\link[ergm]{ergm}} and \code{\link[Bergm]{ergmAPL}}.}
 }
 \description{
 Function to estimate the evidence (marginal likelihood) with Power posteriors, 
@@ -59,7 +62,7 @@ PPE <- evidencePP(flomarriage ~ edges + kstar(2),
                   aux.thin    = 50,   
                   main.iters  = 2000,
                   burn.in     = 100,
-                  V.proposal = 2.5)
+                  V.proposal  = 2.5)
                                    
 # MCMC diagnostics and posterior summaries:
 summary(PPE)

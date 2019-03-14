@@ -36,6 +36,8 @@
 #' 
 #' @param aux.thin count; number of auxiliary iterations between network draws after the first network is drawn (Robbins-Monro). See \code{\link[ergm]{control.simulate.formula}}.
 #' 
+#' @param estimate If "MLE" (the default), then an approximate maximum likelihood estimator is used as a starting point in the Robbins-Monro algorithm. If "CD" , the Monte-Carlo contrastive divergence estimate is returned. See \code{\link[ergm]{ergm}}.
+#' 
 #' @param ... Additional arguments, to be passed to the ergm function. See \code{\link[ergm]{ergm}}.
 #' 
 #' @references 
@@ -85,6 +87,7 @@ bergmC <- function(formula,
                    rm.alpha    = 0,        
                    n.aux.draws = 400,  
                    aux.thin    = 50,
+                   estimate    = c("MLE","CD"),
                    ...){
   
   y     <- ergm.getnetwork(formula)
@@ -104,6 +107,8 @@ bergmC <- function(formula,
                             constraints = ~., 
                             arguments   = control$MCMC.prop.args, 
                             nw          = y)
+  
+  estimate <- match.arg(estimate)
   
   logpp_short <- function(theta,
                           Y,
@@ -155,8 +160,6 @@ bergmC <- function(formula,
     theta <- array(0, c(dim = rm.iters, dim))  
     theta[1, ] <- init
     
-    #if (pb == TRUE) pb.display <- txtProgressBar(min = 0, max = rm.iters, style = 3)
-    
     for (i in 2:rm.iters) {
       
       z <- ergm_MCMC_slave(Clist    = Clist,
@@ -167,7 +170,6 @@ bergmC <- function(formula,
       
       estgrad    <- -apply(z, 2, mean) - solve(prior.sigma, (theta[i - 1,] - prior.mean))
       theta[i, ] <- theta[i - 1, ]  + ((rm.a/i) * (rm.alpha + estgrad))
-      #if (pb == TRUE) setTxtProgressBar(pb.display , i)
     }
     out <- list(Theta = theta) 
     return(out)
@@ -210,7 +212,7 @@ bergmC <- function(formula,
   
   message(" > MAP estimation")
   
-  suppressMessages(rob.mon.init <- ergm(formula, verbose = FALSE, ...))
+  suppressMessages(rob.mon.init <- ergm(formula, estimate = estimate, verbose = FALSE, ...))
   
   theta.star <- rm_ergm(formula, 
                         rm.iters    = rm.iters,

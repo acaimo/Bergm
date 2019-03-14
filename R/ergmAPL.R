@@ -16,6 +16,8 @@
 #' 
 #' @param ladder count; Length of temperature ladder (>=3).
 #' 
+#' @param estimate If "MLE" (the default), then an approximate maximum likelihood estimator is returned. If "CD" , the Monte-Carlo contrastive divergence estimate is returned. See \code{\link[ergm]{ergm}}.
+#' 
 #' @param ... Additional arguments, to be passed to the ergm function. See \code{\link[ergm]{ergm}}.
 #'
 #' @references
@@ -29,34 +31,33 @@ ergmAPL <- function(formula,
                     aux.iters   = NULL, 
                     n.aux.draws = NULL, 
                     aux.thin    = NULL, 
-                    ladder      = NULL, 
+                    ladder      = NULL,
+                    estimate    = c("MLE","CD"),
                     ...) 
 {
-  y <- ergm.getnetwork(formula)
+  y     <- ergm.getnetwork(formula)
   model <- ergm_model(formula, y)
-  n   <- dim(y[,])[1]
-  sy  <- summary(formula)
-  dim <- length(sy)
+  n     <- dim(y[,])[1]
+  sy    <- summary(formula)
+  dim   <- length(sy)
   
-  if (dim == 1) 
-    stop("Model dimension must be greater than 1")
-  if (is.null(aux.iters)) 
-    aux.iters <- 3000
-  if (is.null(n.aux.draws)) 
-    n.aux.draws <- 50
-  if (is.null(aux.thin)) 
-    aux.thin <- 50
-  if (is.null(ladder)) 
-    ladder <- 50
+  if (dim == 1) stop("Model dimension must be greater than 1")
+  if (is.null(aux.iters)) aux.iters <- 3000
+  if (is.null(n.aux.draws)) n.aux.draws <- 50
+  if (is.null(aux.thin)) aux.thin <- 50
+  if (is.null(ladder)) ladder <- 50
   
-  Clist <- ergm.Cprepare(y, model)
-  control <- control.ergm(MCMC.burnin = aux.iters, 
-                          MCMC.interval = aux.thin, 
-                          MCMC.samplesize = n.aux.draws, 
+  estimate <- match.arg(estimate)
+  
+  Clist   <- ergm.Cprepare(y, model)
+  control <- control.ergm(MCMC.burnin        = aux.iters, 
+                          MCMC.interval      = aux.thin, 
+                          MCMC.samplesize    = n.aux.draws, 
                           MCMC.init.maxedges = 20000, 
-                          MCMC.max.maxedges = Inf)
-  proposal <- ergm_proposal(object = ~., constraints = ~., 
-                            arguments = control$MCMC.prop.args, nw = y)
+                          MCMC.max.maxedges  = Inf)
+  proposal <- ergm_proposal(object      = ~., 
+                            constraints = ~., 
+                            arguments   = control$MCMC.prop.args, nw = y)
   
   adjusted_logPL <- function(theta, Y, X, weights, calibr.info) {
     theta_transf   <- c(calibr.info$W %*% (theta - calibr.info$Theta_MLE) + calibr.info$Theta_PL)
@@ -66,8 +67,7 @@ ergmAPL <- function(formula,
   }
   
   Hessian_logPL <- function(theta, X, weights) {
-    p <- exp(as.matrix(X) %*% theta)/(1 + exp(as.matrix(X) %*% 
-                                                theta))
+    p <- exp(as.matrix(X) %*% theta)/(1 + exp(as.matrix(X) %*% theta))
     W <- Diagonal(x = as.vector(weights * p * (1 - p)))
     Hessian <- -t(as.matrix(X)) %*% W %*% as.matrix(X)
     Hessian <- as.matrix(Hessian)
@@ -82,7 +82,7 @@ ergmAPL <- function(formula,
                                   colnames(mplesetup$predictor))
   path <- seq(0, 1, length.out = ladder)
   
-  suppressMessages(mle <- ergm(formula, verbose = FALSE, ...))
+  suppressMessages(mle  <- ergm(formula, estimate = estimate, verbose = FALSE, ...))
   suppressMessages(mple <- ergm(formula, estimate = "MPLE", verbose = FALSE))
   
   delta <- ergm_MCMC_slave(Clist    = Clist, 
@@ -97,20 +97,17 @@ ergmAPL <- function(formula,
   HPL <- Hessian_logPL(theta   = mple$coef, 
                        X       = mplesetup$predictor, 
                        weights = mplesetup$weights)
-  
-  #--------------------------------
-  # Round the matrices to avoid error message from is.symmetric.matrix()
-  # in is.positive.definite() due to rounding error
+
   HPL <- round(HPL,5)
-  mat <- -H
+  mat <- -H           
   mat <- round(mat,5)
   
-  if (is.positive.definite(mat) == TRUE & is.positive.definite(HPL) == TRUE) {
-    chol.HPL <- chol(-HPL)
-    chol.H   <- chol(mat)
-    W        <- solve(chol.HPL) %*% chol.H
+  if( is.positive.definite(mat) == TRUE & is.positive.definite(HPL) == TRUE ) {
+    chol.HPL<- chol(-HPL)
+    chol.H  <- chol(mat)
+    W       <- solve(chol.HPL) %*% chol.H
     
-  } else if (is.positive.definite(mat) == FALSE & is.positive.definite(HPL) == TRUE) {
+  } else if (is.positive.definite(mat) == FALSE & is.positive.definite(HPL) == TRUE){
     
     suppressWarnings( chol.H <- chol(mat, pivot = TRUE) )
     pivot    <- attr(chol.H, "pivot")
@@ -118,7 +115,7 @@ ergmAPL <- function(formula,
     chol.HPL <- chol(-HPL)
     W        <- solve(chol.HPL) %*% chol.H[, oo]
     
-  } else if (is.positive.definite(mat) == TRUE & is.positive.definite(HPL) == FALSE) {
+  } else if (is.positive.definite(mat) == TRUE & is.positive.definite(HPL) == FALSE){
     chol.H <- chol(mat)
     
     suppressWarnings( chol.HPL <- chol(-HPL, pivot = TRUE) )
@@ -127,16 +124,15 @@ ergmAPL <- function(formula,
     W     <- solve(chol.HPL[, oo]) %*% chol.H
     
   } else {
-    suppressWarnings(chol.H <- chol(mat, pivot = TRUE))
+    suppressWarnings( chol.H <- chol(mat, pivot = TRUE) )
     pivot.H <- attr(chol.H, "pivot")
     oo.H    <- order(pivot.H)
     
-    suppressWarnings(chol.HPL <- chol(-HPL, pivot = TRUE))
+    suppressWarnings( chol.HPL <- chol(-HPL, pivot = TRUE) )
     pivot.HPL <- attr(chol.HPL, "pivot")
     oo.HPL    <- order(pivot.HPL)
     W         <- solve(chol.HPL[, oo.HPL]) %*% chol.H[, oo.H]
   }
-  #--------------------------------
   
   adjust.info <- list(Theta_MLE = mle$coef, 
                       Theta_PL = mple$coef, 

@@ -5,7 +5,7 @@
 \title{Adjustment of ERGM pseudolikelihood}
 \usage{
 ergmAPL(formula, aux.iters = NULL, n.aux.draws = NULL,
-  aux.thin = NULL, ladder = NULL, ...)
+  aux.thin = NULL, ladder = NULL, estimate = c("MLE", "CD"), ...)
 }
 \arguments{
 \item{formula}{formula; an \code{\link[ergm]{ergm}} formula object,
@@ -20,6 +20,8 @@ and <model terms> are \code{ergm-terms}.}
 \item{aux.thin}{count; Number of auxiliary iterations between network draws after the first network is drawn. See \code{\link[ergm]{control.simulate.formula}}.}
 
 \item{ladder}{count; Length of temperature ladder (>=3).}
+
+\item{estimate}{If "MLE" (the default), then an approximate maximum likelihood estimator is returned. If "CD" , the Monte-Carlo contrastive divergence estimate is returned. See \code{\link[ergm]{ergm}}.}
 
 \item{...}{Additional arguments, to be passed to the ergm function. See \code{\link[ergm]{ergm}}.}
 }
