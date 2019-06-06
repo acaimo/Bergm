@@ -195,7 +195,7 @@ bergmM <- function(formula,
               # Network Imputation
               impNet <- simulate(currentFormula, 
                                  coef = theta1,
-                                 statsonly = FALSE,
+                                 output = "network",
                                  basis = y, 
                                  constraints = ~fixallbut(missingTies),
                                  nsim = 1,
