@@ -66,17 +66,6 @@ p.flo <- bergm(flomarriage ~ edges + kstar(2),
 # Posterior summaries:
 summary(p.flo)
 
-# MCMC diagnostics plots:
-plot(p.flo)
-
-# Bayesian goodness-of-fit test:
-bgof(p.flo,
-     aux.iters   = 500,
-     sample.size = 30,
-     n.deg       = 10,
-     n.dist      = 9,
-     n.esp       = 6)
-
 }
 \references{
 Caimo, A. and Friel, N. (2011), "Bayesian Inference for Exponential Random Graph Models,"

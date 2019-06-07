@@ -5,9 +5,9 @@
 \title{Parameter estimation for Bayesian ERGMs under missing data}
 \usage{
 bergmM(formula, burn.in = 100, main.iters = 1000, aux.iters = 1000,
-  prior.mean = NULL, prior.sigma = NULL, nchains = NULL,
-  gamma = 0.5, V.proposal = 0.0025, seed = NULL, startVals = NULL,
-  nImp = NULL, missingUpdate = NULL, ...)
+  prior.mean = NULL, prior.sigma = NULL, nchains = 3, gamma = 0.5,
+  V.proposal = 0.0025, seed = NULL, startVals = NULL, nImp = NULL,
+  missingUpdate = NULL, ...)
 }
 \arguments{
 \item{formula}{formula; an \code{\link[ergm]{ergm}} formula object,
@@ -56,7 +56,7 @@ Function to fit Bayesian exponential random graphs models under missing data
 using the approximate exchange algorithm.
 }
 \examples{
-#\dontrun{
+\dontrun{
 # Load the florentine marriage network
 data(florentine)
 
@@ -77,7 +77,7 @@ m.flo <- bergmM(flomarriage ~ edges + kstar(2),
 
 # Posterior summaries:
 summary(m.flo)
-#}
+}
 }
 \references{
 Caimo, A. and Friel, N. (2011), "Bayesian Inference for Exponential Random Graph Models,"

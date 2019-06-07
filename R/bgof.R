@@ -7,8 +7,6 @@
 #' exponential random graph models.
 #'
 #' @param x an \code{R} object of class \code{bergm}.
-#'
-#' @param directed logical; TRUE if the observed graph is directed.
 #' 
 #' @param sample.size count; number of networks 
 #' to be simulated and compared to the observed network.
@@ -49,12 +47,31 @@
 #' 
 #' Caimo, A. and Friel, N. (2014), "Bergm: Bayesian Exponential Random Graphs in R," 
 #' Journal of Statistical Software, 61(2), 1-25. \url{jstatsoft.org/v61/i02}
+#' 
+#' @examples
+#' \dontrun{
+#' # Load the florentine marriage network
+#' data(florentine)
 #'
+#' # Posterior parameter estimation:
+#' p.flo <- bergm(flomarriage ~ edges + kstar(2),
+#'                burn.in    = 50,
+#'                aux.iters  = 500,
+#'                main.iters = 1000,
+#'                gamma      = 1.2)
+#'
+#' # Bayesian goodness-of-fit test:
+#' bgof(p.flo,
+#'      aux.iters   = 500,
+#'      sample.size = 30,
+#'      n.deg       = 10,
+#'      n.dist      = 9,
+#'      n.esp       = 6)
+#'}
 #' @export
 #' 
 
 bgof <- function(x,
-                 directed    = FALSE,
                  sample.size = 100,
                  aux.iters   = 10000,
                  n.deg       = NULL,
@@ -65,8 +82,9 @@ bgof <- function(x,
                  ...){
 
   FF <- as.matrix(x$Theta[sample(dim(x$Theta)[1], sample.size), ])
+  DN <- is.directed(ergm.getnetwork(x$formula))
 
-  if (directed == FALSE) { # undirected
+  if (!DN) { # undirected
   	for (i in 1:sample.size) {
 	  	a <- gof(x$formula,
 	  	         coef = FF[i, ],

@@ -15,3 +15,20 @@
 \description{
 This function creates  MCMC diagnostic plots for \code{bergm} objects.
 }
+\examples{
+\dontrun{
+# Load the florentine marriage network
+data(florentine)
+
+# Posterior parameter estimation:
+p.flo <- bergm(flomarriage ~ edges + kstar(2),
+               burn.in    = 50,
+               aux.iters  = 500,
+               main.iters = 1000,
+               gamma      = 1.2)
+
+# MCMC diagnostics plots:
+plot(p.flo)
+}
+
+}

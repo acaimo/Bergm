@@ -4,14 +4,11 @@
 \alias{bgof}
 \title{Bayesian goodness-of-fit diagnostics for ERGMs}
 \usage{
-bgof(x, directed = FALSE, sample.size = 100, aux.iters = 10000,
-  n.deg = NULL, n.dist = NULL, n.esp = NULL, n.ideg = NULL,
-  n.odeg = NULL, ...)
+bgof(x, sample.size = 100, aux.iters = 10000, n.deg = NULL,
+  n.dist = NULL, n.esp = NULL, n.ideg = NULL, n.odeg = NULL, ...)
 }
 \arguments{
 \item{x}{an \code{R} object of class \code{bergm}.}
-
-\item{directed}{logical; TRUE if the observed graph is directed.}
 
 \item{sample.size}{count; number of networks 
 to be simulated and compared to the observed network.}
@@ -52,6 +49,27 @@ minimum geodesic distances,
 and edge-wise shared partner distributions 
 to diagnose the Bayesian goodness-of-fit of 
 exponential random graph models.
+}
+\examples{
+\dontrun{
+# Load the florentine marriage network
+data(florentine)
+
+# Posterior parameter estimation:
+p.flo <- bergm(flomarriage ~ edges + kstar(2),
+               burn.in    = 50,
+               aux.iters  = 500,
+               main.iters = 1000,
+               gamma      = 1.2)
+
+# Bayesian goodness-of-fit test:
+bgof(p.flo,
+     aux.iters   = 500,
+     sample.size = 30,
+     n.deg       = 10,
+     n.dist      = 9,
+     n.esp       = 6)
+}
 }
 \references{
 Caimo, A. and Friel, N. (2011), "Bayesian Inference for Exponential Random Graph Models," 

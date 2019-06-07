@@ -91,7 +91,7 @@ bergmM <- function(formula,
                    aux.iters     = 1000,
                    prior.mean    = NULL,
                    prior.sigma   = NULL,
-                   nchains       = NULL,
+                   nchains       = 3,
                    gamma         = 0.5,
                    V.proposal    = 0.0025,
                    seed          = NULL,
@@ -108,7 +108,6 @@ bergmM <- function(formula,
     dim    <- length(sy)
     
     if (dim == 1) stop("Model dimension must be greater than 1")
-    if (nchains < 3) stop("nchains must be greater than 2")
 
     impNets <- NULL
 

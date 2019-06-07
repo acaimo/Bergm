@@ -62,17 +62,6 @@
 #'
 #' # Posterior summaries:
 #' summary(p.flo)
-#' 
-#' # MCMC diagnostics plots:
-#' plot(p.flo)
-#'
-#' # Bayesian goodness-of-fit test:
-#' bgof(p.flo,
-#'      aux.iters   = 500,
-#'      sample.size = 30,
-#'      n.deg       = 10,
-#'      n.dist      = 9,
-#'      n.esp       = 6)
 #'
 #' @export
 
@@ -94,7 +83,6 @@ bergm <- function(formula,
   dim   <- length(sy)
   
   if (dim == 1) stop("Model dimension must be greater than 1")
-  if (nchains < 3) stop("nchains must be greater than 2")
   if (any(is.na(as.matrix.network(y)))) print("Network has missing data. Use bermM() instead.")
   
   # For network simulation
