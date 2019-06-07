@@ -64,19 +64,8 @@ cpp.flo <- bergmC(flomarriage ~ edges + kstar(2),
                   main.iters = 10000,
                   V.proposal = 2.5)
 
-# MCMC diagnostics and posterior summaries:
+# Posterior summaries:
 summary(cpp.flo)
-
-# MCMC diagnostics plots:
-plot(cpp.flo)
-
-# Bayesian goodness-of-fit test:
-bgof(cpp.flo,
-     aux.iters   = 500,
-     sample.size = 50,
-     n.deg       = 10,
-     n.dist      = 9,
-     n.esp       = 6)
 }
 
 }

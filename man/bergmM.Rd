@@ -56,7 +56,7 @@ Function to fit Bayesian exponential random graphs models under missing data
 using the approximate exchange algorithm.
 }
 \examples{
-\dontrun{
+#\dontrun{
 # Load the florentine marriage network
 data(florentine)
 
@@ -77,10 +77,7 @@ m.flo <- bergmM(flomarriage ~ edges + kstar(2),
 
 # Posterior summaries:
 summary(m.flo)
-
-# MCMC diagnostics plots:
-plot(m.flo)
-}
+#}
 }
 \references{
 Caimo, A. and Friel, N. (2011), "Bayesian Inference for Exponential Random Graph Models,"

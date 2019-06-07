@@ -64,7 +64,7 @@ PPE <- evidencePP(flomarriage ~ edges + kstar(2),
                   burn.in     = 100,
                   V.proposal  = 2.5)
                                    
-# MCMC diagnostics and posterior summaries:
+# Posterior summaries:
 summary(PPE)
 
 # MCMC diagnostics plots:

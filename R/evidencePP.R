@@ -59,7 +59,7 @@
 #'                   burn.in     = 100,
 #'                   V.proposal  = 2.5)
 #'                                    
-#' # MCMC diagnostics and posterior summaries:
+#' # Posterior summaries:
 #' summary(PPE)
 #' 
 #' # MCMC diagnostics plots:
@@ -71,21 +71,21 @@
 #'
 #' @export
 #'
-evidencePP <- function (formula, 
-                        prior.mean  = NULL, 
-                        prior.sigma = NULL, 
-                        aux.iters   = 1000, 
-                        n.aux.draws = 50, 
-                        aux.thin    = 50, 
-                        ladder      = 30, 
-                        main.iters  = 20000, 
-                        burn.in     = 5000, 
-                        thin        = 1, 
-                        V.proposal  = 1.5, 
-                        seed        = NA, 
-                        temps       = NULL,
-                        estimate    = c("MLE","CD"),
-                        ...) 
+evidencePP <- function(formula, 
+                       prior.mean  = NULL, 
+                       prior.sigma = NULL, 
+                       aux.iters   = 1000, 
+                       n.aux.draws = 50, 
+                       aux.thin    = 50, 
+                       ladder      = 30, 
+                       main.iters  = 20000, 
+                       burn.in     = 5000, 
+                       thin        = 1, 
+                       V.proposal  = 1.5, 
+                       seed        = NA, 
+                       temps       = NULL,
+                       estimate    = c("MLE", "CD"),
+                       ...) 
 {
   y     <- ergm.getnetwork(formula)
   model <- ergm_model(formula, y)

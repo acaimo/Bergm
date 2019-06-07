@@ -94,6 +94,7 @@ bergm <- function(formula,
   dim   <- length(sy)
   
   if (dim == 1) stop("Model dimension must be greater than 1")
+  if (nchains < 3) stop("nchains must be greater than 2")
   if (any(is.na(as.matrix.network(y)))) print("Network has missing data. Use bermM() instead.")
   
   # For network simulation

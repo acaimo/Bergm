@@ -82,9 +82,6 @@
 #'
 #' # Posterior summaries:
 #' summary(m.flo)
-#'
-#' # MCMC diagnostics plots:
-#' plot(m.flo)
 #'}
 #' @export
 
@@ -105,12 +102,13 @@ bergmM <- function(formula,
   
     if (is.null(seed)) set.seed(sample(1:999, 1)) else set.seed(seed)
 
-    y     <- ergm.getnetwork(formula)
-    model <- ergm_model(formula, y)
-    sy    <- summary(formula)
-    dim   <- length(sy)
+    y      <- ergm.getnetwork(formula)
+    model  <- ergm_model(formula, y)
+    sy     <- summary(formula)
+    dim    <- length(sy)
     
     if (dim == 1) stop("Model dimension must be greater than 1")
+    if (nchains < 3) stop("nchains must be greater than 2")
 
     impNets <- NULL
 
@@ -195,7 +193,7 @@ bergmM <- function(formula,
               # Network Imputation
               impNet <- simulate(currentFormula, 
                                  coef = theta1,
-                                 statsonly = FALSE,
+                                 output = 'network',
                                  basis = y, 
                                  constraints = ~fixallbut(missingTies),
                                  nsim = 1,

@@ -82,7 +82,7 @@ CJE <- evidenceCJ(flomarriage ~ edges + kstar(2),
                   num.samples = 25000,
                   V.proposal  = 2.5)
                                    
-# MCMC diagnostics and posterior summaries:
+# Posterior summaries:
 summary(CJE)
 
 # MCMC diagnostics plots:
