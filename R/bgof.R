@@ -84,7 +84,7 @@ bgof <- function(x,
   FF <- as.matrix(x$Theta[sample(dim(x$Theta)[1], sample.size), ])
   DN <- is.directed(ergm.getnetwork(x$formula))
 
-  if (!DN) { # undirected
+  if (DN == FALSE) { # undirected
   	for (i in 1:sample.size) {
 	  	a <- gof(x$formula,
 	  	         coef = FF[i, ],
