@@ -83,7 +83,7 @@ bergm <- function(formula,
   dim   <- length(sy)
   
   if (dim == 1) stop("Model dimension must be greater than 1")
-  if (any(is.na(as.matrix.network(y)))) print("Network has missing data. Use bermM() instead.")
+  if (any(is.na(as.matrix.network(y)))) print("Network has missing data. Use bergmM() instead.")
   
   # For network simulation
   Clist   <- ergm.Cprepare(y, model)
