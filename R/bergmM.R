@@ -34,8 +34,8 @@
 #' @param startVals vector;
 #' optional starting values for the parameter estimation. 
 #'
-#'@param offset.coef vector;
-#'A vector of coefficients for the offset terms.
+#' @param offset.coef vector;
+#' A vector of coefficients for the offset terms.
 #' 
 #' @param nImp count;
 #' number of imputed networks to be returned. If null, no imputed network will be returned.
