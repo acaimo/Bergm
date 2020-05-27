@@ -68,9 +68,18 @@
 #'
 #' @export
 
-bergm <- function(formula, prior.mean = NULL, prior.sigma = NULL, burn.in = 100,
-          main.iters = 1000, aux.iters = 1000, nchains = NULL, gamma = 0.5,
-          V.proposal = 0.0025, startVals = NULL, offset.coef = NULL, ...) {
+bergm <- function(formula, 
+                  prior.mean = NULL, 
+                  prior.sigma = NULL, 
+                  burn.in = 100,
+                  main.iters = 1000, 
+                  aux.iters = 1000, 
+                  nchains = NULL, 
+                  gamma = 0.5,
+                  V.proposal = 0.0025, 
+                  startVals = NULL, 
+                  offset.coef = NULL, 
+                  ...) {
   y <- ergm.getnetwork(formula)
   model <- ergm_model(formula, y)
   sy <- summary(formula)
