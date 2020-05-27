@@ -40,8 +40,8 @@
 #' @param startVals vector;
 #' optional starting values for the parameter estimation. 
 #'
-#'@param offset.coef vector;
-#'A vector of coefficients for the offset terms.
+#' @param offset.coef vector;
+#' A vector of coefficients for the offset terms.
 #'
 #' @param ... additional arguments, to be passed to lower-level functions.
 #'
