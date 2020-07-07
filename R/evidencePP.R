@@ -31,7 +31,8 @@
 #' @param V.proposal count; diagonal entry for the multivariate Normal proposal.
 #' By default set to 1.5.
 #' 
-#' @param seed seed for the random number generator. See \code{\link[MCMCpack]{MCMCmetrop1R}}. 
+#' @param seed integer; seed for the random number generator. 
+#' See \code{set.seed} and \code{\link[MCMCpack]{MCMCmetrop1R}}. 
 #' 
 #' @param temps numeric vector; inverse temperature ladder, \eqn{t \in [0,1]}.
 #'
@@ -82,7 +83,7 @@ evidencePP <- function(formula,
                        burn.in     = 5000, 
                        thin        = 1, 
                        V.proposal  = 1.5, 
-                       seed        = NA, 
+                       seed        = 1, 
                        temps       = NULL,
                        estimate    = c("MLE", "CD"),
                        ...) 
@@ -170,7 +171,8 @@ evidencePP <- function(formula,
                            n.aux.draws = n.aux.draws, 
                            aux.thin    = aux.thin, 
                            ladder      = ladder,
-                           estimate    = estimate, 
+                           estimate    = estimate,
+                           seed        = seed,
                            ...)
   
   calibr.info <- list(Theta_MLE = info.adjustPL$Theta_MLE, 
@@ -204,13 +206,19 @@ evidencePP <- function(formula,
     diag(covar.temps[[i]]) <- diag(S.prop)/(temps[i]^a.tilde[1])
   }
   covar.temps[[1]] <- covar.temps[[2]]
+  
   message(" > MCMC run")
+  
   for (l in numtemp:1) {
+    
     if (l == 1) {
-      pplist[[l]] <- rmvnorm(main.iters, mean = prior.mean, sigma = prior.sigma)
+      
+      set.seed(seed)
+      
+      pplist[[l]]    <- rmvnorm(main.iters, mean = prior.mean, sigma = prior.sigma)
       acceptances[l] <- 1
-    }
-    else {
+      
+    } else {
       if (l == numtemp) l0 <- calibr.info$Theta_PL else l0 <- c(tail(red)[6, ])
       
       capture.output(red <- MCMCmetrop1R(adjusted_logPP, 
@@ -232,7 +240,9 @@ evidencePP <- function(formula,
       acceptances[l] <- round(1 - rejectionRate(red)[1], 3)
     }
   }
+  
   message(" > Model evidence estimation")
+  
   names(acceptances) <- paste("Temp", "_", 1:numtemp, " = ", round(temps, 5), sep = "")
   grad.logpp.list <- logPL.list <- list()
   
@@ -240,8 +250,7 @@ evidencePP <- function(formula,
     if (j == 1) {
       grad.logpp.list[[j]] <- t(apply(data.frame(pplist[[j]]), 1, function(x) -solve(prior.sigma, (x - prior.mean))))
       logPL.list[[j]] <- apply(pplist[[j]], 1, function(x) dmvnorm(x,prior.mean, prior.sigma, log = TRUE))
-    }
-    else {
+    } else {
       grad.logpp.list[[j]] <- t(apply(data.frame(pplist[[j]]), 
                                       1, function(x) {
                                         score_logPPt(theta       = x, 

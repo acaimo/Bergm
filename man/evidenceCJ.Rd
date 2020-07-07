@@ -4,10 +4,23 @@
 \alias{evidenceCJ}
 \title{Evidence estimation via Chib and Jeliazkov's method}
 \usage{
-evidenceCJ(formula, prior.mean = NULL, prior.sigma = NULL,
-  aux.iters = 1000, n.aux.draws = 5, aux.thin = 50, ladder = 30,
-  main.iters = 30000, burn.in = 5000, thin = 1, V.proposal = 1.5,
-  num.samples = 25000, seed = NA, estimate = c("MLE", "CD"), ...)
+evidenceCJ(
+  formula,
+  prior.mean = NULL,
+  prior.sigma = NULL,
+  aux.iters = 1000,
+  n.aux.draws = 5,
+  aux.thin = 50,
+  ladder = 30,
+  main.iters = 30000,
+  burn.in = 5000,
+  thin = 1,
+  V.proposal = 1.5,
+  num.samples = 25000,
+  seed = 1,
+  estimate = c("MLE", "CD"),
+  ...
+)
 }
 \arguments{
 \item{formula}{formula; an \code{\link[ergm]{ergm}} formula object,
@@ -57,8 +70,8 @@ By default set to 1.5.}
 number of samples used in the marginal likelihood estimate. 
 Must be lower than \code{main.iters} - \code{burnin}.}
 
-\item{seed}{seed for the random number generator. 
-See \code{\link[MCMCpack]{MCMCmetrop1R}}.}
+\item{seed}{integer; seed for the random number generator. 
+See \code{set.seed} and \code{\link[MCMCpack]{MCMCmetrop1R}}.}
 
 \item{estimate}{If "MLE" (the default), then an approximate maximum likelihood estimator is returned. If "CD" , the Monte-Carlo contrastive divergence estimate is returned. See \code{\link[ergm]{ergm}}.}
 

@@ -4,10 +4,23 @@
 \alias{evidencePP}
 \title{Evidence estimation via power posteriors}
 \usage{
-evidencePP(formula, prior.mean = NULL, prior.sigma = NULL,
-  aux.iters = 1000, n.aux.draws = 50, aux.thin = 50, ladder = 30,
-  main.iters = 20000, burn.in = 5000, thin = 1, V.proposal = 1.5,
-  seed = NA, temps = NULL, estimate = c("MLE", "CD"), ...)
+evidencePP(
+  formula,
+  prior.mean = NULL,
+  prior.sigma = NULL,
+  aux.iters = 1000,
+  n.aux.draws = 50,
+  aux.thin = 50,
+  ladder = 30,
+  main.iters = 20000,
+  burn.in = 5000,
+  thin = 1,
+  V.proposal = 1.5,
+  seed = 1,
+  temps = NULL,
+  estimate = c("MLE", "CD"),
+  ...
+)
 }
 \arguments{
 \item{formula}{formula; an \code{\link[ergm]{ergm}} formula object,
@@ -38,7 +51,8 @@ By default set to a diagonal matrix with every diagonal entry equal to 100.}
 \item{V.proposal}{count; diagonal entry for the multivariate Normal proposal.
 By default set to 1.5.}
 
-\item{seed}{seed for the random number generator. See \code{\link[MCMCpack]{MCMCmetrop1R}}.}
+\item{seed}{integer; seed for the random number generator. 
+See \code{set.seed} and \code{\link[MCMCpack]{MCMCmetrop1R}}.}
 
 \item{temps}{numeric vector; inverse temperature ladder, \eqn{t \in [0,1]}.}
 

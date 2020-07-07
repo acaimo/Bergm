@@ -4,10 +4,23 @@
 \alias{bergmM}
 \title{Parameter estimation for Bayesian ERGMs under missing data}
 \usage{
-bergmM(formula, burn.in = 100, main.iters = 1000, aux.iters = 1000,
-  prior.mean = NULL, prior.sigma = NULL, nchains = 3, gamma = 0.5,
-  V.proposal = 0.0025, seed = NULL, startVals = NULL, nImp = NULL,
-  missingUpdate = NULL, ...)
+bergmM(
+  formula,
+  burn.in = 100,
+  main.iters = 1000,
+  aux.iters = 1000,
+  prior.mean = NULL,
+  prior.sigma = NULL,
+  nchains = NULL,
+  gamma = 0.5,
+  V.proposal = 0.0025,
+  seed = NULL,
+  startVals = NULL,
+  offset.coef = NULL,
+  nImp = NULL,
+  missingUpdate = NULL,
+  ...
+)
 }
 \arguments{
 \item{formula}{formula; an \code{\link[ergm]{ergm}} formula object,
@@ -40,6 +53,9 @@ random number seed for the Bergm estimation.}
 
 \item{startVals}{vector;
 optional starting values for the parameter estimation.}
+
+\item{offset.coef}{vector;
+A vector of coefficients for the offset terms.}
 
 \item{nImp}{count;
 number of imputed networks to be returned. If null, no imputed network will be returned.}

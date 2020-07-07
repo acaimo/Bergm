@@ -46,7 +46,7 @@
 #' Social Networks, 33(1), 41-55. \url{http://arxiv.org/abs/1007.5192}
 #' 
 #' Caimo, A. and Friel, N. (2014), "Bergm: Bayesian Exponential Random Graphs in R," 
-#' Journal of Statistical Software, 61(2), 1-25. \url{jstatsoft.org/v61/i02}
+#' Journal of Statistical Software, 61(2), 1-25. \url{http://jstatsoft.org/v61/i02}
 #' 
 #' @examples
 #' \dontrun{

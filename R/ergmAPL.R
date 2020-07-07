@@ -18,6 +18,8 @@
 #' 
 #' @param estimate If "MLE" (the default), then an approximate maximum likelihood estimator is returned. If "CD" , the Monte-Carlo contrastive divergence estimate is returned. See \code{\link[ergm]{ergm}}.
 #' 
+#' @param seed integer; seed for the random number generator. See \code{set.seed}.
+#' 
 #' @param ... Additional arguments, to be passed to the ergm function. See \code{\link[ergm]{ergm}}.
 #'
 #' @references
@@ -33,6 +35,7 @@ ergmAPL <- function(formula,
                     aux.thin    = NULL, 
                     ladder      = NULL,
                     estimate    = c("MLE","CD"),
+                    seed        = 1,
                     ...) 
 {
   y     <- ergm.getnetwork(formula)
@@ -42,6 +45,7 @@ ergmAPL <- function(formula,
   dim   <- length(sy)
   
   if (dim == 1) stop("Model dimension must be greater than 1")
+  
   if (is.null(aux.iters)) aux.iters <- 3000
   if (is.null(n.aux.draws)) n.aux.draws <- 50
   if (is.null(aux.thin)) aux.thin <- 50
@@ -54,7 +58,8 @@ ergmAPL <- function(formula,
                           MCMC.interval      = aux.thin, 
                           MCMC.samplesize    = n.aux.draws, 
                           MCMC.init.maxedges = 20000, 
-                          MCMC.max.maxedges  = Inf)
+                          MCMC.max.maxedges  = Inf,
+                          seed               = seed)
   proposal <- ergm_proposal(object      = ~., 
                             constraints = ~., 
                             arguments   = control$MCMC.prop.args, nw = y)
@@ -82,8 +87,27 @@ ergmAPL <- function(formula,
                                   colnames(mplesetup$predictor))
   path <- seq(0, 1, length.out = ladder)
   
-  suppressMessages(mle  <- ergm(formula, estimate = estimate, verbose = FALSE, ...))
+  suppressMessages(mle  <- ergm(formula, estimate = estimate, verbose = FALSE, control = control.ergm(seed = seed), ...))
   suppressMessages(mple <- ergm(formula, estimate = "MPLE", verbose = FALSE))
+  
+  if( any( c(-Inf, Inf) %in% mle$coef) | 
+      any( c(-Inf, Inf) %in% mple$coef) ) {
+    
+    if( any( c(-Inf, Inf) %in% mle$coef) ){
+      
+      inf_term <- names(mle$coef[mle$coef %in% c(-Inf, Inf)])
+      inf_term <- paste(inf_term, collapse = " & ")
+      
+    } else if( any( c(-Inf, Inf) %in% mple$coef) ){
+    
+      inf_term <- names(mple$coef[mple$coef %in% c(-Inf, Inf)])
+      inf_term <- paste(inf_term, collapse = " & ")
+    }
+    
+    stop( paste0("The MLE/MPLE contains an infinite value for the following model terms: ", 
+                 inf_term, 
+                 ". Consider changing these model terms.") )
+  }
   
   delta <- ergm_MCMC_slave(Clist    = Clist, 
                            proposal = proposal, 

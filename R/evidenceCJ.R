@@ -50,8 +50,8 @@
 #' diagonal entry for the multivariate Normal proposal.
 #' By default set to 1.5.
 #' 
-#' @param seed seed for the random number generator. 
-#' See \code{\link[MCMCpack]{MCMCmetrop1R}}. 
+#' @param seed integer; seed for the random number generator. 
+#' See \code{set.seed} and \code{\link[MCMCpack]{MCMCmetrop1R}}. 
 #'
 #' @param estimate If "MLE" (the default), then an approximate maximum likelihood estimator is returned. If "CD" , the Monte-Carlo contrastive divergence estimate is returned. See \code{\link[ergm]{ergm}}.
 #' 
@@ -104,7 +104,7 @@ evidenceCJ <- function(formula,
                        thin        = 1, 
                        V.proposal  = 1.5, 
                        num.samples = 25000, 
-                       seed        = NA,
+                       seed        = 1,
                        estimate    = c("MLE","CD"),
                        ...) 
 {
@@ -156,6 +156,7 @@ evidenceCJ <- function(formula,
                            aux.thin    = aux.thin, 
                            ladder      = ladder,
                            estimate    = estimate, 
+                           seed        = seed,
                            ...)
   
   calibr.info <- list(Theta_MLE = info.adjustPL$Theta_MLE, 
@@ -210,6 +211,8 @@ evidenceCJ <- function(formula,
                              prior.mean  = prior.mean, 
                              prior.sigma = prior.sigma, 
                              calibr.info = calibr.info)
+  
+  set.seed(seed)
   
   g       <- sample(1:nrow(T0), num.samples, replace = TRUE)
   theta.g <- T0[g, ]

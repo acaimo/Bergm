@@ -4,11 +4,24 @@
 \alias{bergmC}
 \title{Calibrating misspecified Bayesian ERGMs}
 \usage{
-bergmC(formula, prior.mean = NULL, prior.sigma = NULL,
-  burn.in = 10000, main.iters = 40000, aux.iters = 3000,
-  V.proposal = 1.5, thin = 1, rm.iters = 500, rm.a = 0.001,
-  rm.alpha = 0, n.aux.draws = 400, aux.thin = 50,
-  estimate = c("MLE", "CD"), ...)
+bergmC(
+  formula,
+  prior.mean = NULL,
+  prior.sigma = NULL,
+  burn.in = 10000,
+  main.iters = 40000,
+  aux.iters = 3000,
+  V.proposal = 1.5,
+  thin = 1,
+  rm.iters = 500,
+  rm.a = 0.001,
+  rm.alpha = 0,
+  n.aux.draws = 400,
+  aux.thin = 50,
+  estimate = c("MLE", "CD"),
+  seed = 1,
+  ...
+)
 }
 \arguments{
 \item{formula}{formula; an \code{\link[ergm]{ergm}} formula object,
@@ -44,6 +57,8 @@ By default set to 1.5.}
 \item{aux.thin}{count; number of auxiliary iterations between network draws after the first network is drawn (Robbins-Monro). See \code{\link[ergm]{control.simulate.formula}}.}
 
 \item{estimate}{If "MLE" (the default), then an approximate maximum likelihood estimator is used as a starting point in the Robbins-Monro algorithm. If "CD" , the Monte-Carlo contrastive divergence estimate is returned. See \code{\link[ergm]{ergm}}.}
+
+\item{seed}{integer; seed for the random number generator. See \code{set.seed}.}
 
 \item{...}{Additional arguments, to be passed to the ergm function. See \code{\link[ergm]{ergm}}.}
 }

@@ -78,7 +78,7 @@ bergm <- function(formula,
                   gamma = 0.5,
                   V.proposal = 0.0025, 
                   startVals = NULL, 
-                  offset.coef = NULL, 
+                  offset.coef = NULL,
                   ...) {
   y <- ergm.getnetwork(formula)
   model <- ergm_model(formula, y)
@@ -90,7 +90,7 @@ bergm <- function(formula,
     print("Network has missing data. Use bermM() instead.")
   if (!is.null(offset.coef)) {
     if (any(offset.coef %in% c(Inf,-Inf,NaN,NA))) {
-    stop("Inf,-Inf,NaN,NA are not allowed for offset.coef. \n If Inf or -Inf are required use large values instead (e.g., 1000 or -1000).")
+    stop("Inf, -Inf, NaN, NA are not allowed for offset.coef. \n If Inf or -Inf are required use large values instead (e.g., 1000 or -1000).")
     }
   }
   Clist <- ergm.Cprepare(y, model)
@@ -100,12 +100,6 @@ bergm <- function(formula,
 
   if (!is.null(control$init)) {
     if (length(control$init) != length(model$etamap$offsettheta)) {
-      if (verbose) {
-        message("control$init =")
-        message_print(control$init)
-        message("number of statistics is ", length(model$coef.names),
-                "")
-      }
       stop(paste("Invalid starting parameter vector control$init:",
                  "wrong number of parameters.", "If you are passing output from another ergm run as control$init,",
                  "in a model with curved terms, see help(enformulate.curved)."))

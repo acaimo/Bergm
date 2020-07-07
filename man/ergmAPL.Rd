@@ -4,8 +4,16 @@
 \alias{ergmAPL}
 \title{Adjustment of ERGM pseudolikelihood}
 \usage{
-ergmAPL(formula, aux.iters = NULL, n.aux.draws = NULL,
-  aux.thin = NULL, ladder = NULL, estimate = c("MLE", "CD"), ...)
+ergmAPL(
+  formula,
+  aux.iters = NULL,
+  n.aux.draws = NULL,
+  aux.thin = NULL,
+  ladder = NULL,
+  estimate = c("MLE", "CD"),
+  seed = 1,
+  ...
+)
 }
 \arguments{
 \item{formula}{formula; an \code{\link[ergm]{ergm}} formula object,
@@ -22,6 +30,8 @@ and <model terms> are \code{ergm-terms}.}
 \item{ladder}{count; Length of temperature ladder (>=3).}
 
 \item{estimate}{If "MLE" (the default), then an approximate maximum likelihood estimator is returned. If "CD" , the Monte-Carlo contrastive divergence estimate is returned. See \code{\link[ergm]{ergm}}.}
+
+\item{seed}{integer; seed for the random number generator. See \code{set.seed}.}
 
 \item{...}{Additional arguments, to be passed to the ergm function. See \code{\link[ergm]{ergm}}.}
 }

@@ -38,6 +38,8 @@
 #' 
 #' @param estimate If "MLE" (the default), then an approximate maximum likelihood estimator is used as a starting point in the Robbins-Monro algorithm. If "CD" , the Monte-Carlo contrastive divergence estimate is returned. See \code{\link[ergm]{ergm}}.
 #' 
+#' @param seed integer; seed for the random number generator. See \code{set.seed}.
+#' 
 #' @param ... Additional arguments, to be passed to the ergm function. See \code{\link[ergm]{ergm}}.
 #' 
 #' @references 
@@ -77,6 +79,7 @@ bergmC <- function(formula,
                    n.aux.draws = 400,  
                    aux.thin    = 50,
                    estimate    = c("MLE","CD"),
+                   seed        = 1,
                    ...){
   
   y     <- ergm.getnetwork(formula)
@@ -87,11 +90,12 @@ bergmC <- function(formula,
   if (is.null(prior.mean))  prior.mean  <- rep(0, dim)
   if (is.null(prior.sigma)) prior.sigma <- diag(100, dim, dim)
   
-  
   Clist   <- ergm.Cprepare(y, model)
   control <- control.ergm(MCMC.burnin     = aux.iters,
                           MCMC.interval   = aux.thin,
-                          MCMC.samplesize = n.aux.draws)
+                          MCMC.samplesize = n.aux.draws,
+                          seed            = seed)
+  
   proposal <- ergm_proposal(object      = ~., 
                             constraints = ~., 
                             arguments   = control$MCMC.prop.args, 
@@ -197,11 +201,13 @@ bergmC <- function(formula,
                                               thin        = thin, 
                                               mcmc        = main.iters, 
                                               burnin      = burn.in,
-                                              logfun      = TRUE))
+                                              seed        = seed,
+                                              logfun      = TRUE
+                                              ))
   
   message(" > MAP estimation")
   
-  suppressMessages(rob.mon.init <- ergm(formula, estimate = estimate, verbose = FALSE, ...))
+  suppressMessages(rob.mon.init <- ergm(formula, estimate = estimate, verbose = FALSE, control = control.ergm(seed = seed), ...))
   
   theta.star <- rm_ergm(formula, 
                         rm.iters    = rm.iters,
