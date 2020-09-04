@@ -87,7 +87,7 @@ bergm <- function(formula,
   if (dim == 1)
     stop("Model dimension must be greater than 1")
   if (any(is.na(as.matrix.network(y))))
-    print("Network has missing data. Use bermM() instead.")
+    print("Network has missing data. Use bergmM() instead.")
   if (!is.null(offset.coef)) {
     if (any(offset.coef %in% c(Inf,-Inf,NaN,NA))) {
     stop("Inf, -Inf, NaN, NA are not allowed for offset.coef. \n If Inf or -Inf are required use large values instead (e.g., 1000 or -1000).")
