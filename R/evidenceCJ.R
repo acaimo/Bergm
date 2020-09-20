@@ -190,7 +190,7 @@ evidenceCJ <- function(formula,
                                     mcmc        = main.iters, 
                                     burnin      = burn.in, 
                                     calibr.info = calibr.info, 
-                                    seed        = seed, 
+                                    seed        = NA, 
                                     logfun      = TRUE))
   
   message(" > Model evidence estimation")
@@ -212,7 +212,7 @@ evidenceCJ <- function(formula,
                              prior.sigma = prior.sigma, 
                              calibr.info = calibr.info)
   
-  set.seed(seed)
+  #set.seed(seed)
   
   g       <- sample(1:nrow(T0), num.samples, replace = TRUE)
   theta.g <- T0[g, ]

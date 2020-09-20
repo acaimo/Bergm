@@ -213,7 +213,7 @@ evidencePP <- function(formula,
     
     if (l == 1) {
       
-      set.seed(seed)
+      #set.seed(seed)
       
       pplist[[l]]    <- rmvnorm(main.iters, mean = prior.mean, sigma = prior.sigma)
       acceptances[l] <- 1
@@ -226,7 +226,7 @@ evidencePP <- function(formula,
                                          burnin      = burn.in, 
                                          thin        = thin, 
                                          theta.init  = l0, 
-                                         seed        = seed, 
+                                         seed        = NA, 
                                          V           = covar.temps[[l]], 
                                          Y           = mplesetup$response, 
                                          X           = mplesetup$predictor, 
