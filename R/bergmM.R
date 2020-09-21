@@ -117,7 +117,7 @@ bergmM <- function(formula,
       stop("Inf,-Inf,NaN,NA are not allowed for offset.coef. \n If Inf or -Inf are required use large values instead (e.g., 1000 or -1000).")
     }
   }
-  if (!all(is.na(as.matrix.network(y)))) {
+  if (!any(is.na(as.matrix.network(y)))) {
         print("Network has no missing data. Use bergm() for faster estimation instead.")}
   impNets <- NULL
   if (!is.null(nImp)) {
