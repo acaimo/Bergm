@@ -212,9 +212,7 @@ evidencePP <- function(formula,
   for (l in numtemp:1) {
     
     if (l == 1) {
-      
-      #set.seed(seed)
-      
+
       pplist[[l]]    <- rmvnorm(main.iters, mean = prior.mean, sigma = prior.sigma)
       acceptances[l] <- 1
       
@@ -271,6 +269,7 @@ evidencePP <- function(formula,
                                                 calibr.info = calibr.info)
                                })
     }
+    
     k <- dim * (dim + 3)/2
     l <- 2 * dim + 1
     w.mat <- matrix(0, nrow = main.iters, ncol = k)
@@ -304,6 +303,7 @@ evidencePP <- function(formula,
     }
     return(cv.res.D2.mts)
   }
+  
   pp.estimates <- ppml(cv.ell.D2 = cv.ell.D2, cv.vll.D2 = cv.vll.D2, tempvec = temps)
   
   log.evidence <- calibr.info$logC + pp.estimates

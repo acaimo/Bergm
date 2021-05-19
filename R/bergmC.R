@@ -95,11 +95,6 @@ bergmC <- function(formula,
                           MCMC.samplesize = n.aux.draws,
                           seed            = seed)
   
-  proposal <- ergm_proposal(object      = ~., 
-                            constraints = ~., 
-                            arguments   = control$MCMC.prop.args, 
-                            nw          = y)
-  
   estimate <- match.arg(estimate)
   
   logpp_short <- function(theta,
@@ -139,7 +134,6 @@ bergmC <- function(formula,
                       sy,
                       dim,
                       control,
-                      proposal,
                       rm.iters,            
                       rm.a,                 
                       rm.alpha,          
@@ -153,20 +147,19 @@ bergmC <- function(formula,
     
     for (i in 2:rm.iters) {
       
-      # Addition:
       y0 <- simulate(formula, 
                      coef        = theta[i - 1,], 
-                     nsim        = 1, 
-                     control     = control.simulate(MCMC.burnin = 1,
+                     nsim        = 1,
+                     control     = control.simulate(MCMC.burnin   = 1,
                                                     MCMC.interval = 1),
                      return.args = "ergm_state")$object
       
-      # Addition:
       z <- as.matrix( ergm_MCMC_sample(y0,
-                            theta   = theta[i - 1,],
-                            stats0  = sy,
-                            control = control)$stats[[1]] )
-
+                                       theta   = theta[i - 1,],
+                                       stats0  = sy,
+                                       control = control)$stats[[1]] )
+      z <- sweep(z, 2, sy, '-')
+      
       estgrad    <- -apply(z, 2, mean) - solve(prior.sigma, (theta[i - 1,] - prior.mean))
       theta[i, ] <- theta[i - 1, ]  + ((rm.a/i) * (rm.alpha + estgrad))
     }
@@ -229,8 +222,7 @@ bergmC <- function(formula,
                         model       = model,
                         sy          = sy,
                         dim         = dim,
-                        control     = control,
-                        proposal    = proposal
+                        control     = control
   )
   
   theta.PLstar <- optim(par         = summary(unadj.sample)$statistics[,1],
@@ -260,7 +252,8 @@ bergmC <- function(formula,
                                    theta   = theta.star$Theta[rm.iters, ],
                                    stats0  = sy,
                                    control = control)$stats[[1]] )
-  sim.samples <- sweep(z, 2, sy, '+')
+  
+  sim.samples <- z
   
   Hessian.post.truelike <- -cov(sim.samples) - solve(prior.sigma)  
   

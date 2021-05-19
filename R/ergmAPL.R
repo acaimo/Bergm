@@ -53,16 +53,11 @@ ergmAPL <- function(formula,
   
   estimate <- match.arg(estimate)
   
-  Clist   <- ergm.Cprepare(y, model)
   control <- control.ergm(MCMC.burnin        = aux.iters, 
                           MCMC.interval      = aux.thin, 
                           MCMC.samplesize    = n.aux.draws, 
-                          MCMC.init.maxedges = 20000, 
-                          MCMC.max.maxedges  = Inf,
+                          MCMC.maxedges      = Inf,
                           seed               = seed)
-  proposal <- ergm_proposal(object      = ~., 
-                            constraints = ~., 
-                            arguments   = control$MCMC.prop.args, nw = y)
   
   adjusted_logPL <- function(theta, Y, X, weights, calibr.info) {
     theta_transf   <- c(calibr.info$W %*% (theta - calibr.info$Theta_MLE) + calibr.info$Theta_PL)
@@ -90,17 +85,17 @@ ergmAPL <- function(formula,
   suppressMessages(mle  <- ergm(formula, estimate = estimate, verbose = FALSE, control = control.ergm(seed = seed), ...))
   suppressMessages(mple <- ergm(formula, estimate = "MPLE", verbose = FALSE))
   
-  if( any( c(-Inf, Inf) %in% mle$coef) | 
-      any( c(-Inf, Inf) %in% mple$coef) ) {
+  if( any( c(-Inf, Inf) %in% mle$coefficients) | 
+      any( c(-Inf, Inf) %in% mple$coefficients) ) {
     
-    if( any( c(-Inf, Inf) %in% mle$coef) ){
+    if( any( c(-Inf, Inf) %in% mle$coefficients) ){
       
-      inf_term <- names(mle$coef[mle$coef %in% c(-Inf, Inf)])
+      inf_term <- names(mle$coefficients[mle$coefficients %in% c(-Inf, Inf)])
       inf_term <- paste(inf_term, collapse = " & ")
       
-    } else if( any( c(-Inf, Inf) %in% mple$coef) ){
+    } else if( any( c(-Inf, Inf) %in% mple$coefficients) ){
     
-      inf_term <- names(mple$coef[mple$coef %in% c(-Inf, Inf)])
+      inf_term <- names(mple$coefficients[mple$coefficients %in% c(-Inf, Inf)])
       inf_term <- paste(inf_term, collapse = " & ")
     }
     
@@ -108,17 +103,23 @@ ergmAPL <- function(formula,
                  inf_term, 
                  ". Consider changing these model terms.") )
   }
+
+  y0 <- simulate(formula, 
+                 coef        = mle$coefficients, 
+                 nsim        = 1, 
+                 control     = control.simulate(MCMC.burnin = 1,
+                                                MCMC.interval = 1),
+                 return.args = "ergm_state")$object
   
-  delta <- ergm_MCMC_slave(Clist    = Clist, 
-                           proposal = proposal, 
-                           eta      = mle$coef, 
-                           control  = control, 
-                           verbose  = FALSE)$s
-  sim.samples <- sweep(delta, 2, sy, "+")
+  z <- as.matrix( ergm_MCMC_sample(y0,
+                                   theta    = mle$coefficients,
+                                   stats0   = sy,
+                                   control  = control
+                                   )$stats[[1]] )
   
-  H   <- -cov(sim.samples)
+  H   <- -cov(z)
   
-  HPL <- Hessian_logPL(theta   = mple$coef, 
+  HPL <- Hessian_logPL(theta   = mple$coefficients, 
                        X       = mplesetup$predictor, 
                        weights = mplesetup$weights)
 
@@ -158,17 +159,24 @@ ergmAPL <- function(formula,
     W         <- solve(chol.HPL[, oo.HPL]) %*% chol.H[, oo.H]
   }
   
-  adjust.info <- list(Theta_MLE = mle$coef, 
-                      Theta_PL = mple$coef, 
+  adjust.info <- list(Theta_MLE = mle$coefficients, 
+                      Theta_PL  = mple$coefficients, 
                       W = W)
   
   E <- lapply(seq_along(path)[-length(path)], function(i) { 
-    delta <- ergm_MCMC_slave(Clist    = Clist, 
-                             proposal = proposal, 
-                             eta      = path[i] * adjust.info$Theta_MLE, 
-                             control  = control, 
-                             verbose  = FALSE)$s
-    Monte.Carlo.samples <- sweep(delta, 2, sy, "+")
+    
+    y0E <- simulate(formula, 
+                    coef        = path[i] * adjust.info$Theta_MLE, 
+                    nsim        = 1, 
+                    control     = control.simulate(MCMC.burnin   = 1,
+                                                   MCMC.interval = 1),
+                   return.args = "ergm_state")$object
+    
+    Monte.Carlo.samples <- as.matrix( ergm_MCMC_sample(y0E,
+                                                       theta    = path[i] * adjust.info$Theta_MLE,
+                                                       stats0   = sy,
+                                                       control  = control)$stats[[1]])
+    
     log( mean( exp( (path[i + 1] - path[i]) * adjust.info$Theta_MLE %*% t(Monte.Carlo.samples) ) ) )
   })
   
@@ -187,8 +195,8 @@ ergmAPL <- function(formula,
                                  calibr.info = adjust.info)
   
   out <- list(formula      = formula, 
-              Theta_MLE    = mle$coef, 
-              Theta_PL     = mple$coef, 
+              Theta_MLE    = mle$coefficients, 
+              Theta_PL     = mple$coefficients, 
               W            = W, 
               logC         = ll.true - ll.adjpseudo, 
               ll_true      = ll.true, 
