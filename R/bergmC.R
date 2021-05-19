@@ -153,19 +153,18 @@ bergmC <- function(formula,
     
     for (i in 2:rm.iters) {
       
-      # Addition:
       y0 <- simulate(formula, 
                      coef        = theta[i - 1,], 
-                     nsim        = 1, 
-                     control     = control.simulate(MCMC.burnin = 1,
+                     nsim        = 1,
+                     control     = control.simulate(MCMC.burnin   = 1,
                                                     MCMC.interval = 1),
                      return.args = "ergm_state")$object
       
-      # Addition:
       z <- as.matrix( ergm_MCMC_sample(y0,
-                            theta   = theta[i - 1,],
-                            stats0  = sy,
-                            control = control)$stats[[1]] )
+                                       theta   = theta[i - 1,],
+                                       stats0  = sy,
+                                       proposal= proposal,
+                                       control = control)$stats[[1]] )
 
       estgrad    <- -apply(z, 2, mean) - solve(prior.sigma, (theta[i - 1,] - prior.mean))
       theta[i, ] <- theta[i - 1, ]  + ((rm.a/i) * (rm.alpha + estgrad))
@@ -259,6 +258,7 @@ bergmC <- function(formula,
   z <- as.matrix( ergm_MCMC_sample(y0,
                                    theta   = theta.star$Theta[rm.iters, ],
                                    stats0  = sy,
+                                   proposal= proposal,
                                    control = control)$stats[[1]] )
   sim.samples <- sweep(z, 2, sy, '+')
   
