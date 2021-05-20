@@ -47,10 +47,10 @@
 #'
 #' @references
 #' Caimo, A. and Friel, N. (2011), "Bayesian Inference for Exponential Random Graph Models,"
-#' Social Networks, 33(1), 41-55. \url{http://arxiv.org/abs/1007.5192}
+#' Social Networks, 33(1), 41-55. \url{https://arxiv.org/abs/1007.5192}
 #'
 #' Caimo, A. and Friel, N. (2014), "Bergm: Bayesian Exponential Random Graphs in R,"
-#' Journal of Statistical Software, 61(2), 1-25. \url{jstatsoft.org/v61/i02}
+#' Journal of Statistical Software, 61(2), 1-25. \url{https://www.jstatsoft.org/article/view/v061i02}
 #'
 #' @examples
 #' # Load the florentine marriage network
@@ -80,28 +80,38 @@ bergm <- function(formula,
                   startVals = NULL, 
                   offset.coef = NULL,
                   ...) {
+  
   y <- ergm.getnetwork(formula)
   model <- ergm_model(formula, y)
   sy <- summary(formula)
   dim <- length(sy)
   if (dim == 1)
-    stop("Model dimension must be greater than 1")
+    stop("Model dimension must be greater than 1.")
   if (any(is.na(as.matrix.network(y))))
     print("Network has missing data. Use bergmM() instead.")
   if (!is.null(offset.coef)) {
-    if (any(offset.coef %in% c(Inf,-Inf,NaN,NA))) {
-    stop("Inf, -Inf, NaN, NA are not allowed for offset.coef. \n If Inf or -Inf are required use large values instead (e.g., 1000 or -1000).")
+    if (any(offset.coef %in% c(Inf, -Inf, NaN, NA))) {
+    stop("Inf, -Inf, NaN, NA are not allowed for offset.coef. \n 
+         If Inf or -Inf are required use large values instead (e.g., 1000 or -1000).")
     }
   }
-  Clist <- ergm.Cprepare(y, model)
-  control <- control.ergm(MCMC.burnin = aux.iters, MCMC.interval = 1,
+  
+  y0 <- simulate(formula,
+                 coef        = rep(0, dim),
+                 nsim        = 1,
+                 control     = control.simulate(MCMC.burnin = 1, # !!!
+                                                MCMC.interval = 1),
+                 return.args = "ergm_state")$object
+  
+  control <- control.ergm(MCMC.burnin = aux.iters, 
+                          MCMC.interval = 1,
                           MCMC.samplesize = 1)
-
 
   if (!is.null(control$init)) {
     if (length(control$init) != length(model$etamap$offsettheta)) {
       stop(paste("Invalid starting parameter vector control$init:",
-                 "wrong number of parameters.", "If you are passing output from another ergm run as control$init,",
+                 "wrong number of parameters.", 
+                 "If you are passing output from another ergm run as control$init,",
                  "in a model with curved terms, see help(enformulate.curved)."))
     }
   } else {control$init <- rep(NA, length(model$etamap$offsettheta))}
@@ -119,51 +129,68 @@ bergm <- function(formula,
          paste.and(model$coef.names[is.na(control$init) |
                                       model$offsettheta]), ".", sep = "") }
 
-
   proposal <- ergm_proposal(object = ~., constraints = ~.,
-                            arguments = control$MCMC.prop.args, nw = y)
-  if (is.null(prior.mean))
-    prior.mean <- rep(0, dim)
-  if (is.null(prior.sigma))
-    prior.sigma <- diag(100, dim, dim)
-  if (is.null(nchains))
-    nchains <- 2 * dim
+                            arguments = control$MCMC.prop.args, 
+                            nw = y)
+
+  if (is.null(prior.mean)) prior.mean <- rep(0, dim)
+  if (is.null(prior.sigma)) prior.sigma <- diag(100, dim, dim)
+  if (is.null(nchains)) nchains <- 2 * dim
+
   S.prop <- diag(V.proposal, dim, dim)
   Theta <- array(NA, c(main.iters, dim, nchains))
+  
   if (is.null(startVals)) {
     suppressMessages(mple <- ergm(formula, estimate = "MPLE",
                                   verbose = FALSE,
                                   offset.coef = offset.coef)$coef)
-    theta <- matrix(mple + runif(dim * nchains, min = -0.1,
-                                 max = 0.1), dim, nchains)
-  }  else {
-    theta <- matrix(startVals + runif(dim * nchains, min = -0.1,
-                                      max = 0.1), dim, nchains)
+    theta <- matrix(mple + runif(dim * nchains, min = -0.1, max = 0.1), 
+                    dim, 
+                    nchains)
+  } else {
+    theta <- matrix(startVals + 
+                    runif(dim * nchains, min = -0.1, max = 0.1), 
+                    dim, 
+                    nchains)
   }
+  
   theta[model$etamap$offsettheta,] <- offset.coef
   theta1 <- rep(NA, dim)
   tot.iters <- burn.in + main.iters
   clock.start <- Sys.time()
+
   message(" > MCMC start")
+
   for (k in 1:tot.iters) {
-    for (h in 1:nchains) {
-      theta1 <- theta[, h] + gamma * apply(theta[, sample(seq(1,
-                    nchains)[-h], 2)], 1, diff) + rmvnorm(1, sigma = S.prop)[1,]
+
+      for (h in 1:nchains) {
+        
+        theta1 <- theta[, h] + 
+                  gamma * 
+                  apply(theta[, sample(seq(1, nchains)[-h], 2)], 1, diff) + 
+                  rmvnorm(1, sigma = S.prop)[1,]
 
       theta1[model$etamap$offsettheta] <- offset.coef
-
-      delta <- ergm_MCMC_slave(Clist = Clist, proposal = proposal,
-                               eta = theta1, control = control, verbose = FALSE)$s
-      pr <- dmvnorm(rbind(theta1, theta[, h]), mean = prior.mean,
-                    sigma = prior.sigma, log = TRUE)
-      beta <- (theta[, h] - theta1) %*% t(delta) + pr[1] -
-        pr[2]
-      if (beta >= log(runif(1)))
-        theta[, h] <- theta1
+      
+      delta <- ergm_MCMC_sample(y0,
+                                theta   = theta1,
+                                control = control)$stats[[1]][1,] - sy
+      
+      pr <- dmvnorm(rbind(theta1, theta[, h]), 
+                    mean = prior.mean,
+                    sigma = prior.sigma, 
+                    log = TRUE)
+      
+      beta <- (theta[, h] - theta1) %*% delta + pr[1] - pr[2]
+      
+      if (beta >= log(runif(1))) theta[, h] <- theta1
+    
     }
-    if (k > burn.in)
-      Theta[k - burn.in, , ] <- theta
+    
+    if (k > burn.in) Theta[k - burn.in, , ] <- theta
+  
   }
+  
   clock.end <- Sys.time()
   runtime <- difftime(clock.end, clock.start)
   FF <- mcmc(apply(Theta, 2, cbind))
@@ -171,6 +198,7 @@ bergm <- function(formula,
   names(AR) <- NULL
   ess <- round(effectiveSize(FF), 0)
   names(ess) <- model$coef.names
+  
   out = list(Time = runtime, formula = formula, specs = model$coef.names,
              dim = dim, Theta = FF, AR = AR, ess = ess)
   class(out) <- "bergm"
