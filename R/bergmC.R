@@ -157,9 +157,15 @@ bergmC <- function(formula,
       z <- as.matrix( ergm_MCMC_sample(y0,
                                        theta   = theta[i - 1,],
                                        stats0  = sy,
+<<<<<<< HEAD
                                        control = control)$stats[[1]] )
       z <- sweep(z, 2, sy, '-')
       
+=======
+                                       proposal= proposal,
+                                       control = control)$stats[[1]] )
+
+>>>>>>> 8b982f0ca01fdf6b4231ea387b9460f80e70d9f3
       estgrad    <- -apply(z, 2, mean) - solve(prior.sigma, (theta[i - 1,] - prior.mean))
       theta[i, ] <- theta[i - 1, ]  + ((rm.a/i) * (rm.alpha + estgrad))
     }
@@ -251,6 +257,7 @@ bergmC <- function(formula,
   z <- as.matrix( ergm_MCMC_sample(y0,
                                    theta   = theta.star$Theta[rm.iters, ],
                                    stats0  = sy,
+                                   proposal= proposal,
                                    control = control)$stats[[1]] )
   
   sim.samples <- z

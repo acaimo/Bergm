@@ -58,6 +58,14 @@ ergmAPL <- function(formula,
                           MCMC.samplesize    = n.aux.draws, 
                           MCMC.maxedges      = Inf,
                           seed               = seed)
+<<<<<<< HEAD
+=======
+  
+  proposal <- ergm_proposal(object      = ~., 
+                            constraints = ~., 
+                            arguments   = control$MCMC.prop.args,
+                            nw          = y)
+>>>>>>> 8b982f0ca01fdf6b4231ea387b9460f80e70d9f3
   
   adjusted_logPL <- function(theta, Y, X, weights, calibr.info) {
     theta_transf   <- c(calibr.info$W %*% (theta - calibr.info$Theta_MLE) + calibr.info$Theta_PL)
@@ -111,6 +119,7 @@ ergmAPL <- function(formula,
                                                 MCMC.interval = 1),
                  return.args = "ergm_state")$object
   
+<<<<<<< HEAD
   z <- as.matrix( ergm_MCMC_sample(y0,
                                    theta    = mle$coefficients,
                                    stats0   = sy,
@@ -118,6 +127,19 @@ ergmAPL <- function(formula,
                                    )$stats[[1]] )
   
   H   <- -cov(z)
+=======
+  delta <- as.matrix( ergm_MCMC_sample(y0,
+                                       theta    = mle$coefficients,
+                                       stats0   = sy,
+                                       control  = control,
+                                       proposal = proposal
+                                       )$stats[[1]] 
+                      )
+
+  sim.samples <- sweep(delta, 2, sy, "+")
+  
+  H   <- -cov(sim.samples)
+>>>>>>> 8b982f0ca01fdf6b4231ea387b9460f80e70d9f3
   
   HPL <- Hessian_logPL(theta   = mple$coefficients, 
                        X       = mplesetup$predictor, 
@@ -172,10 +194,22 @@ ergmAPL <- function(formula,
                                                    MCMC.interval = 1),
                    return.args = "ergm_state")$object
     
+<<<<<<< HEAD
     Monte.Carlo.samples <- as.matrix( ergm_MCMC_sample(y0E,
                                                        theta    = path[i] * adjust.info$Theta_MLE,
                                                        stats0   = sy,
                                                        control  = control)$stats[[1]])
+=======
+    delta <- as.matrix( ergm_MCMC_sample(y0E,
+                                         theta    = path[i] * adjust.info$Theta_MLE,
+                                         stats0   = sy,
+                                         control  = control,
+                                         proposal = proposal
+                                         )$stats[[1]] 
+                       )
+
+    Monte.Carlo.samples <- sweep(delta, 2, sy, "+")
+>>>>>>> 8b982f0ca01fdf6b4231ea387b9460f80e70d9f3
     
     log( mean( exp( (path[i + 1] - path[i]) * adjust.info$Theta_MLE %*% t(Monte.Carlo.samples) ) ) )
   })
