@@ -212,8 +212,6 @@ evidenceCJ <- function(formula,
                              prior.sigma = prior.sigma, 
                              calibr.info = calibr.info)
   
-  #set.seed(seed)
-  
   g       <- sample(1:nrow(T0), num.samples, replace = TRUE)
   theta.g <- T0[g, ]
   

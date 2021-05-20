@@ -90,16 +90,10 @@ bergmC <- function(formula,
   if (is.null(prior.mean))  prior.mean  <- rep(0, dim)
   if (is.null(prior.sigma)) prior.sigma <- diag(100, dim, dim)
   
-  Clist   <- ergm.Cprepare(y, model)
   control <- control.ergm(MCMC.burnin     = aux.iters,
                           MCMC.interval   = aux.thin,
                           MCMC.samplesize = n.aux.draws,
                           seed            = seed)
-  
-  proposal <- ergm_proposal(object      = ~., 
-                            constraints = ~., 
-                            arguments   = control$MCMC.prop.args, 
-                            nw          = y)
   
   estimate <- match.arg(estimate)
   
@@ -139,9 +133,7 @@ bergmC <- function(formula,
                       model,
                       sy,
                       dim,
-                      Clist,
                       control,
-                      proposal,
                       rm.iters,            
                       rm.a,                 
                       rm.alpha,          
@@ -155,12 +147,19 @@ bergmC <- function(formula,
     
     for (i in 2:rm.iters) {
       
-      z <- ergm_MCMC_slave(Clist    = Clist,
-                           proposal = proposal,
-                           eta      = theta[i - 1,],
-                           control  = control,
-                           verbose  = FALSE)$s
+      y0 <- simulate(formula, 
+                     coef        = theta[i - 1,], 
+                     nsim        = 1,
+                     control     = control.simulate(MCMC.burnin   = 1,
+                                                    MCMC.interval = 1),
+                     return.args = "ergm_state")$object
       
+      z <- as.matrix( ergm_MCMC_sample(y0,
+                                       theta   = theta[i - 1,],
+                                       stats0  = sy,
+                                       control = control)$stats[[1]] )
+      z <- sweep(z, 2, sy, '-')
+
       estgrad    <- -apply(z, 2, mean) - solve(prior.sigma, (theta[i - 1,] - prior.mean))
       theta[i, ] <- theta[i - 1, ]  + ((rm.a/i) * (rm.alpha + estgrad))
     }
@@ -190,7 +189,7 @@ bergmC <- function(formula,
   clock.start <- Sys.time() 
   
   capture.output(unadj.sample <- MCMCmetrop1R(logpp_short,
-                                              theta.init  = mple$coef,
+                                              theta.init  = mple$coefficients,
                                               Y           = mplesetup$response,
                                               X           = mplesetup$predictor,
                                               weights     = mplesetup$weights,
@@ -213,7 +212,7 @@ bergmC <- function(formula,
                         rm.iters    = rm.iters,
                         rm.a        = rm.a,
                         rm.alpha    = rm.alpha,
-                        init        = rob.mon.init$coef,
+                        init        = rob.mon.init$coefficients,
                         aux.iters   = aux.iters,
                         n.aux.draws = n.aux.draws, 
                         aux.thin    = aux.thin,  
@@ -223,16 +222,14 @@ bergmC <- function(formula,
                         model       = model,
                         sy          = sy,
                         dim         = dim,
-                        Clist       = Clist,
-                        control     = control,
-                        proposal    = proposal
+                        control     = control
   )
   
   theta.PLstar <- optim(par         = summary(unadj.sample)$statistics[,1],
                         fn          = logpp_short,
                         gr          = score_logPP,
-                        lower       = rob.mon.init$coef - 3,
-                        upper       = rob.mon.init$coef + 3,
+                        lower       = rob.mon.init$coefficients - 3,
+                        upper       = rob.mon.init$coefficients + 3,
                         Y           = mplesetup$response,
                         X           = mplesetup$predictor,
                         weights     = mplesetup$weights,
@@ -243,13 +240,21 @@ bergmC <- function(formula,
                         method      = "L-BFGS-B")
   
   message(" > Curvature Adjustment")
+
+  y0 <- simulate(formula, 
+                 coef        = theta.star$Theta[rm.iters, ], 
+                 nsim        = 1, 
+                 control     = control.simulate(MCMC.burnin = 1,
+                                                MCMC.interval = 1),
+                 return.args = "ergm_state")$object
   
-  z <- ergm_MCMC_slave(Clist    = Clist,
-                       proposal = proposal,
-                       eta      = theta.star$Theta[rm.iters, ],
-                       control  = control,
-                       verbose  = FALSE)$s
-  sim.samples <- sweep(z, 2, sy, '+')
+  z <- as.matrix( ergm_MCMC_sample(y0,
+                                   theta   = theta.star$Theta[rm.iters, ],
+                                   stats0  = sy,
+                                   proposal= proposal,
+                                   control = control)$stats[[1]] )
+  
+  sim.samples <- z
   
   Hessian.post.truelike <- -cov(sim.samples) - solve(prior.sigma)  
   
