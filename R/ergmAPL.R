@@ -111,7 +111,6 @@ ergmAPL <- function(formula,
                                                 MCMC.interval = 1),
                  return.args = "ergm_state")$object
   
-<<<<<<< HEAD
   z <- as.matrix( ergm_MCMC_sample(y0,
                                    theta    = mle$coefficients,
                                    stats0   = sy,
