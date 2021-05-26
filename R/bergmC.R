@@ -160,7 +160,7 @@ bergmC <- function(formula,
                                        control = control)$stats[[1]] )
       z <- sweep(z, 2, sy, '-')
 
-      estgrad    <- -apply(z, 2, mean) - solve(prior.sigma, (theta[i - 1,] - prior.mean))
+      estgrad <- -apply(z, 2, mean) - solve(prior.sigma, (theta[i - 1,] - prior.mean))
       theta[i, ] <- theta[i - 1, ]  + ((rm.a/i) * (rm.alpha + estgrad))
     }
     out <- list(Theta = theta) 
@@ -183,7 +183,7 @@ bergmC <- function(formula,
   Sigma.proposal <- diag(rep(V.proposal, dim), dim, dim)
   S.prop <- Sigma.proposal %*% solve((solve(prior.sigma) + solve(Vcov.MPLE))) %*% Sigma.proposal 
   
-  suppressMessages( mple <- ergm(formula, estimate = "MPLE", verbose = FALSE) )
+  suppressMessages(mple <- ergm(formula, estimate = "MPLE", verbose = FALSE) )
   
   message(" > MCMC start")
   clock.start <- Sys.time() 
@@ -206,7 +206,11 @@ bergmC <- function(formula,
   
   message(" > MAP estimation")
   
-  suppressMessages(rob.mon.init <- ergm(formula, estimate = estimate, verbose = FALSE, control = control.ergm(seed = seed), ...))
+  suppressMessages(rob.mon.init <- ergm(formula, 
+                                        estimate = estimate, 
+                                        verbose = FALSE, 
+                                        control = control.ergm(seed = seed), 
+                                        ...))
   
   theta.star <- rm_ergm(formula, 
                         rm.iters    = rm.iters,
@@ -251,7 +255,6 @@ bergmC <- function(formula,
   z <- as.matrix( ergm_MCMC_sample(y0,
                                    theta   = theta.star$Theta[rm.iters, ],
                                    stats0  = sy,
-                                   proposal= proposal,
                                    control = control)$stats[[1]] )
   
   sim.samples <- z

@@ -107,6 +107,6 @@ random graph (p-star) models with missing data using bayesian data augmentation,
 Statistical Methodology 7(3), 366-384.
 
 Krause, R.W., Huisman, M., Steglich, C., Snijders, T.A. (2020), "Missing data in 
-cross-sectional networks–An extensive comparison of missing data treatment methods", 
+cross-sectional networks-An extensive comparison of missing data treatment methods", 
 Social Networks 62: 99-112.
 }
