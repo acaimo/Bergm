@@ -67,6 +67,7 @@ Function to fit Bayesian exponential random graphs models
 using the approximate exchange algorithm.
 }
 \examples{
+\dontrun{
 # Load the florentine marriage network
 data(florentine)
 
@@ -79,7 +80,7 @@ p.flo <- bergm(flomarriage ~ edges + kstar(2),
 
 # Posterior summaries:
 summary(p.flo)
-
+}
 }
 \references{
 Caimo, A. and Friel, N. (2011), "Bayesian Inference for Exponential Random Graph Models,"

@@ -53,6 +53,7 @@
 #' Journal of Statistical Software, 61(2), 1-25. \url{https://www.jstatsoft.org/article/view/v061i02}
 #'
 #' @examples
+#' \dontrun{
 #' # Load the florentine marriage network
 #' data(florentine)
 #'
@@ -65,7 +66,7 @@
 #'
 #' # Posterior summaries:
 #' summary(p.flo)
-#'
+#' }
 #' @export
 
 bergm <- function(formula, 
