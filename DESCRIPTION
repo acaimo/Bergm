@@ -8,7 +8,7 @@ Author: Alberto Caimo [aut, cre],
         Robert Krause [aut] 
         Nial Friel [ctb]
 Maintainer: Alberto Caimo <acaimo.stats@gmail.com>
-Description: Bayesian analysis for exponential random graph models using advanced computational algorithms. More information can be found at: <https://acaimo.github.io/Bergm>.
+Description: Bayesian analysis for exponential random graph models using advanced computational algorithms. More information can be found at: <https://acaimo.github.io/Bergm/>.
 License: GPL (>= 2)
 Depends: ergm, R (>= 2.10)
 Imports: network, coda, MCMCpack, Matrix, mvtnorm, matrixcalc,
@@ -18,4 +18,4 @@ Encoding: UTF-8
 LazyData: true
 RoxygenNote: 7.1.1
 NeedsCompilation: no
-Packaged: 2021-06-15 11:28:22 UTC; usilugano
+Packaged: 2021-06-15 11:42:06 UTC; usilugano

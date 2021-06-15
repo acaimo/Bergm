@@ -103,7 +103,7 @@ Caimo, A. and Friel, N. (2014), "Bergm: Bayesian Exponential Random Graphs in R,
 Journal of Statistical Software, 61(2), 1-25. \url{https://www.jstatsoft.org/v61/i02}
 
 Koskinen, J.H., Robins, G.L., Pattison, P.E. (2010), "Analysing exponential
-random graph (p-star) models with missing data using bayesian data augmentation,"
+random graph (p-star) models with missing data using Bayesian data augmentation,"
 Statistical Methodology 7(3), 366-384.
 
 Krause, R.W., Huisman, M., Steglich, C., Snijders, T.A. (2020), "Missing data in 
