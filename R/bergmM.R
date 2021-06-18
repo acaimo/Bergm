@@ -252,6 +252,7 @@ bergmM <- function(formula,
                        control     = control.simulate(MCMC.burnin = 1, # !!!
                                                       MCMC.interval = 1),
                        return.args = "ergm_state")$object
+        sy <- summary(currentFormula)
       }
     }
     if (k > burn.in)
