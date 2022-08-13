@@ -142,9 +142,9 @@ bergm <- function(formula,
   Theta <- array(NA, c(main.iters, dim, nchains))
   
   if (is.null(startVals)) {
-    suppressMessages(mple <- coef(ergm(formula, estimate = "MPLE",
+    suppressMessages(mple <- ergm(formula, estimate = "MPLE",
                                   verbose = FALSE,
-                                  offset.coef = offset.coef)))
+                                  offset.coef = offset.coef)$coef)
     theta <- matrix(mple + runif(dim * nchains, min = -0.1, max = 0.1), 
                     dim, 
                     nchains)

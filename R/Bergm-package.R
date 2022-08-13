@@ -13,6 +13,7 @@
 #' @import MCMCpack
 #' @import Matrix
 #' @import statnet.common
+#' @import Rglpk
 #' @importFrom matrixcalc is.positive.definite
 #' @importFrom grDevices dev.new
 #' @importFrom graphics axis boxplot lines par plot title 

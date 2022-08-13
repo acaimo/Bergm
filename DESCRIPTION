@@ -1,21 +1,18 @@
 Package: Bergm
 Type: Package
 Title: Bayesian Exponential Random Graph Models
-Version: 5.0.3
-Date: 2021-06-15
+Version: 5.0.4
+Date: 2022-08-13
 Author: Alberto Caimo [aut, cre], 
         Lampros Bouranis [aut],
         Robert Krause [aut] 
         Nial Friel [ctb]
-Maintainer: Alberto Caimo <acaimo.stats@gmail.com>
+Maintainer: Alberto Caimo <alberto.caimo@tudublin.ie>
 Description: Bayesian analysis for exponential random graph models using advanced computational algorithms. More information can be found at: <https://acaimo.github.io/Bergm/>.
 License: GPL (>= 2)
 Depends: ergm, R (>= 2.10)
-Imports: network, coda, MCMCpack, Matrix, mvtnorm, matrixcalc,
-        statnet.common
+Imports: network, coda, MCMCpack, Matrix, mvtnorm, matrixcalc, statnet.common, Rglpk
 URL: https://acaimo.github.io/Bergm/
 Encoding: UTF-8
 LazyData: true
 RoxygenNote: 7.1.1
-NeedsCompilation: no
-Packaged: 2021-06-15 11:42:06 UTC; usilugano
