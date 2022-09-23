@@ -40,6 +40,9 @@
 #' @param constraints formula;
 #' A formula specifying one or more constraints on the support of the distribution of the networks being modeled, using syntax similar to the formula argument, on the right-hand side. Multiple constraints may be given, separated by “+” and “-” operators. (See \code{\link[ergm]{ergm}} constraints for the explanation of their semantics.) Together with the model terms in the formula and the reference measure, the constraints define the distribution of networks being modeled.
 #'
+#' @param thin count; 
+#' The thinning interval between consecutive observations.
+#'
 #' @param imputeAllItr logical;
 #' default FALSE. If TRUE, missing network and attribute data are imputed after every iteration.
 #' This leads to much (!!!) longer estimation times, but potentially overall better estimation.
@@ -123,6 +126,7 @@ bergmM <- function(formula,
                     startVals = NULL,
                     offset.coef = NULL,
                     constraints = NULL,
+                    thin = 1,
                     imputeAllItr = FALSE,
                     nImp = NULL,
                     missingUpdate = NULL,
@@ -494,7 +498,7 @@ bergmM <- function(formula,
   runtime <- difftime(clock.end, clock.start)
   clock.end <- Sys.time()
   runtime <- difftime(clock.end, clock.start)
-  FF <- mcmc(apply(Theta, 2, cbind))
+  FF <- mcmc(apply(Theta, 2, cbind), thin = thin)
   AR <- round(1 - rejectionRate(FF)[1], 2)
   names(AR) <- NULL
   ess <- round(effectiveSize(FF), 0)
