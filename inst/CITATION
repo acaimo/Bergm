@@ -1,18 +1,35 @@
 citHeader("To cite Bergm in publications use:")
 
-citEntry(entry = "Article",
+bibentry(bibtype = "Article",
+  title        = "Statistical Network Analysis with {Bergm}",
+  author       = c(person(given = "Alberto",
+                          family = "Caimo",
+                          email = "alberto.caimo@tudublin.ie"),
+                   person(given = "Lampros",
+                          family = "Bouranis"),
+                   person(given = "Robert",
+                          family = "Krause"),
+                   person(given = "Nial",
+                          family = "Friel")),
+  journal      = "Journal of Statistical Software",
+  year         = "2022",
+  volume       = "104",
+  number       = "1",
+  pages        = "1--23",
+  doi          = "10.18637/jss.v104.i01",
+)
+
+bibentry(bibtype = "Article",
   title        = "{Bergm}: {B}ayesian Exponential Random Graphs in {R}",
-  author       = personList(as.person("Alberto Caimo"), as.person("Nial Friel")),
+  author       = c(person(given = "Alberto",
+                          family = "Caimo",
+                          email = "alberto.caimo@tudublin.ie"),
+                   person(given = "Nial",
+                          family = "Friel")),
   journal      = "Journal of Statistical Software",
   year         = "2014",
   volume       = "61",
   number       = "2",
   pages        = "1--25",
-  url          = "https://www.jstatsoft.org/v61/i02/",
-
-  textVersion  =
-  paste("Alberto Caimo, Nial Friel (2014).",
-        "Bergm: Bayesian Exponential Random Graphs in R.",
-        "Journal of Statistical Software, 61(2), 1-25.",
-        "URL https://www.jstatsoft.org/v61/i02/.")
+  doi          = "10.18637/jss.v061.i02"
 )

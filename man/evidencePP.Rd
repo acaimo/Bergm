@@ -89,9 +89,3 @@ PPE$log.evidence
 }
 
 }
-\references{
-Bouranis, L., Friel, N., & Maire, F. (2018). Bayesian model selection for exponential 
-random graph models via adjusted pseudolikelihoods. 
-Journal of Computational and Graphical Statistics, 27(3), 516-528. 
-\url{https://arxiv.org/abs/1706.06344}
-}
