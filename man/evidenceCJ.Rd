@@ -106,3 +106,12 @@ CJE$log.evidence
 }
 
 }
+\references{
+Caimo, A., & Friel, N. (2013). Bayesian model selection for exponential random graph models. 
+Social Networks, 35(1), 11-24. \url{https://arxiv.org/abs/1201.2337}
+
+Bouranis, L., Friel, N., & Maire, F. (2018). Bayesian model selection for exponential 
+random graph models via adjusted pseudolikelihoods. 
+Journal of Computational and Graphical Statistics, 27(3), 516-528. 
+\url{https://arxiv.org/abs/1706.06344}
+}

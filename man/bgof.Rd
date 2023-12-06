@@ -81,7 +81,9 @@ bgof(p.flo,
 }
 }
 \references{
-Caimo, A. and Friel, N. (2011), "Bayesian Inference for Exponential Random Graph Models," Social Networks, 33(1), 41-55. \url{https://arxiv.org/abs/1007.5192}
+Caimo, A. and Friel, N. (2011), "Bayesian Inference for Exponential Random Graph Models," 
+Social Networks, 33(1), 41-55. \url{https://arxiv.org/abs/1007.5192}
 
-Caimo, A. and Friel, N. (2014), "Bergm: Bayesian Exponential Random Graphs in R," Journal of Statistical Software, 61(2), 1-25. \url{https://www.jstatsoft.org/v61/i02}
+Caimo, A. and Friel, N. (2014), "Bergm: Bayesian Exponential Random Graphs in R," 
+Journal of Statistical Software, 61(2), 1-25. \url{https://www.jstatsoft.org/v61/i02}
 }

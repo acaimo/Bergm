@@ -96,10 +96,17 @@ summary(m.flo)
 }
 }
 \references{
+Caimo, A. and Friel, N. (2011), "Bayesian Inference for Exponential Random Graph Models,"
+Social Networks, 33(1), 41-55. \url{https://arxiv.org/abs/1007.5192}
+
+Caimo, A. and Friel, N. (2014), "Bergm: Bayesian Exponential Random Graphs in R,"
+Journal of Statistical Software, 61(2), 1-25. \url{https://www.jstatsoft.org/v61/i02}
+
 Koskinen, J.H., Robins, G.L., Pattison, P.E. (2010), "Analysing exponential
-random graph (p-star) models with missing data using Bayesian data augmentation," Statistical Methodology 7(3), 366-384.
+random graph (p-star) models with missing data using Bayesian data augmentation,"
+Statistical Methodology 7(3), 366-384.
 
-Krause, R.W., Huisman, M., Steglich, C., Snijders, T.A. (2020), "Missing data in cross-sectional networks-An extensive comparison of missing data treatment methods", Social Networks 62: 99-112.
-
-Caimo, A., Bouranis, L., Krause, R. and Friel, N. (2022), "Statistical Network Analysis with Bergm," Journal of Statistical Software, 61(2), 1-25. <doi:10.18637/jss.v104.i01>
+Krause, R.W., Huisman, M., Steglich, C., Snijders, T.A. (2020), "Missing data in 
+cross-sectional networks-An extensive comparison of missing data treatment methods", 
+Social Networks 62: 99-112.
 }

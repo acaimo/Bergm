@@ -54,7 +54,6 @@
 #' 
 #' PPE <- evidencePP(flomarriage ~ edges + kstar(2),
 #'                   aux.iters   = 500, 
-#'                   noisy.nsim  = 50,   
 #'                   aux.thin    = 50,   
 #'                   main.iters  = 2000,
 #'                   burn.in     = 100,
@@ -90,6 +89,7 @@ evidencePP <- function(formula,
 {
   y     <- ergm.getnetwork(formula)
   model <- ergm_model(formula, y)
+  specs <- unlist(sapply(model$terms, '[', 'coef.names'), use.names = FALSE)
   sy    <- summary(formula)
   dim   <- length(sy)
   
@@ -308,7 +308,7 @@ evidencePP <- function(formula,
   
   log.evidence <- calibr.info$logC + pp.estimates
   ess          <- round(effectiveSize(pplist[[numtemp]]), 0)
-  names(ess)   <- model$coef.names
+  names(ess)   <- specs
   
   out <- list(formula = formula, 
               Theta   = pplist[[numtemp]], 
@@ -317,7 +317,7 @@ evidencePP <- function(formula,
               ess     = ess, 
               log.evidence = log.evidence, 
               dim     = dim, 
-              specs   = model$coef.names, 
+              specs   = specs, 
               Time    = runtime)
   class(out) <- "bergm"
   return(out)

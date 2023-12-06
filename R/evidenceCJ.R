@@ -106,10 +106,11 @@ evidenceCJ <- function(formula,
                        num.samples = 25000, 
                        seed        = 1,
                        estimate    = c("MLE","CD"),
-                       ...) 
-{
+                       ...) {
+  
   y     <- ergm.getnetwork(formula)
   model <- ergm_model(formula, y)
+  specs <- unlist(sapply(model$terms, '[', 'coef.names'), use.names = FALSE)
   sy    <- summary(formula)
   dim   <- length(sy)
   
@@ -200,7 +201,7 @@ evidenceCJ <- function(formula,
   
   names(AR)  <- NULL
   ess        <- round(effectiveSize(T0), 0)
-  names(ess) <- model$coef.names
+  names(ess) <- specs
   theta.sum  <- summary(T0)
   thetahat   <- theta.sum$statistics[, "Mean"]
   
@@ -255,7 +256,7 @@ evidenceCJ <- function(formula,
               ess          = ess, 
               log.evidence = logEvidence, 
               dim          = dim, 
-              specs        = model$coef.names, 
+              specs        = specs, 
               Time         = runtime)
   class(out) <- "bergm"
   return(out)

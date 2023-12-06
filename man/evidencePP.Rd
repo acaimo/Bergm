@@ -72,7 +72,6 @@ data(florentine)
 
 PPE <- evidencePP(flomarriage ~ edges + kstar(2),
                   aux.iters   = 500, 
-                  noisy.nsim  = 50,   
                   aux.thin    = 50,   
                   main.iters  = 2000,
                   burn.in     = 100,
@@ -88,4 +87,10 @@ plot(PPE)
 PPE$log.evidence
 }
 
+}
+\references{
+Bouranis, L., Friel, N., & Maire, F. (2018). Bayesian model selection for exponential 
+random graph models via adjusted pseudolikelihoods. 
+Journal of Computational and Graphical Statistics, 27(3), 516-528. 
+\url{https://arxiv.org/abs/1706.06344}
 }

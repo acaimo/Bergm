@@ -61,7 +61,7 @@
 #' p.flo <- bergm(flomarriage ~ edges + kstar(2),
 #'                burn.in    = 50,
 #'                aux.iters  = 500,
-#'                main.iters = 1000,
+#'                main.iters = 3000,
 #'                gamma      = 1.2)
 #'
 #' # Posterior summaries:
@@ -84,6 +84,7 @@ bergm <- function(formula,
   
   y <- ergm.getnetwork(formula)
   model <- ergm_model(formula, y)
+  specs <- unlist(sapply(model$terms, '[', 'coef.names'), use.names = FALSE)
   sy <- summary(formula)
   dim <- length(sy)
   if (dim == 1)
@@ -126,9 +127,9 @@ bergm <- function(formula,
     control$init[model$etamap$offsettheta] <- offset.coef
   }
   if (any(is.na(control$init) & model$etamap$offsettheta)) {
-    stop("The model contains offset terms whose parameter values have not been specified:",
-         paste.and(model$coef.names[is.na(control$init) |
-                                      model$offsettheta]), ".", sep = "") }
+    stop("The model contains offset terms whose parameter values have not been 
+         specified:",
+         paste.and(specs[is.na(control$init) | model$offsettheta]), ".", sep = "") }
 
   proposal <- ergm_proposal(object = ~., constraints = ~.,
                             arguments = control$MCMC.prop.args, 
@@ -144,7 +145,7 @@ bergm <- function(formula,
   if (is.null(startVals)) {
     suppressMessages(mple <- ergm(formula, estimate = "MPLE",
                                   verbose = FALSE,
-                                  offset.coef = offset.coef)$coef)
+                                  offset.coef = offset.coef) |> stats::coef())
     theta <- matrix(mple + runif(dim * nchains, min = -0.1, max = 0.1), 
                     dim, 
                     nchains)
@@ -198,9 +199,9 @@ bergm <- function(formula,
   AR <- round(1 - rejectionRate(FF)[1], 2)
   names(AR) <- NULL
   ess <- round(effectiveSize(FF), 0)
-  names(ess) <- model$coef.names
+  names(ess) <- specs
   
-  out = list(Time = runtime, formula = formula, specs = model$coef.names,
+  out = list(Time = runtime, formula = formula, specs = specs,
              dim = dim, Theta = FF, AR = AR, ess = ess)
   class(out) <- "bergm"
   return(out)

@@ -85,7 +85,7 @@ summary(cpp.flo)
 
 }
 \references{
-Bouranis, L., Friel, N., & Maire, F. (2017). Efficient Bayesian inference for exponential random graph models by correcting the pseudo-posterior distribution. Social Networks, 50, 98-108. \url{https://arxiv.org/abs/1510.00934}
-
-Caimo, A., Bouranis, L., Krause, R. and Friel, N. (2022), "Statistical Network Analysis with Bergm," Journal of Statistical Software, 61(2), 1-25. <doi:10.18637/jss.v104.i01>
+Bouranis, L., Friel, N., & Maire, F. (2017). Efficient Bayesian inference for exponential 
+random graph models by correcting the pseudo-posterior distribution. 
+Social Networks, 50, 98-108. \url{https://arxiv.org/abs/1510.00934}
 }

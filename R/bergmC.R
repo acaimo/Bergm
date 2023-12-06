@@ -84,6 +84,7 @@ bergmC <- function(formula,
   
   y     <- ergm.getnetwork(formula)
   model <- ergm_model(formula, y)
+  specs <- unlist(sapply(model$terms, '[', 'coef.names'), use.names = FALSE)
   sy    <- summary(formula)    
   dim   <- length(sy)
   
@@ -277,7 +278,7 @@ bergmC <- function(formula,
   
   FF  <- mcmc(corrected.sample)
   ess <- round(effectiveSize(FF), 0)
-  names(ess) <- model$coef.names
+  names(ess) <- specs
   
   AR <- round(1 - rejectionRate(FF)[1], 2)
   names(AR) <- NULL
@@ -289,7 +290,7 @@ bergmC <- function(formula,
               AR         = AR,
               ess        = ess,
               dim        = dim,
-              specs      = model$coef.names)
+              specs      = specs)
   
   class(out) <- "bergm"
   return(out)

@@ -44,21 +44,18 @@
 #'
 #' @export
 #'
-evidence <- function(evidence.method = c("CJ", "PP"),
-                        ...)
-{
+
+evidence <- function (evidence.method = c("CJ", "PP"), ...) {
   
-  if ( is.element(evidence.method, c("CJ", "PP")) ){
-    evidence.method <- match.arg(evidence.method, c("CJ", "PP"))
-  } else {
+  if (!is.element(evidence.method, c("CJ", "PP"))) {
     stop("Select a valid evidence estimation method.\n")
   }
-  
-  call <- as.list(match.call())[-1]
-  
-  if( evidence.method == "CJ" ){
+  call <- (as.list(match.call())[-1])[-1]
+  if (evidence.method == "CJ") {
     do.call(evidenceCJ, call)
-  } else if ( evidence.method == "PP" ){
+  }
+  else if (evidence.method == "PP") {
     do.call(evidencePP, call)
   }
+  
 }
