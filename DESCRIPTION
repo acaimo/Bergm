@@ -11,14 +11,26 @@ Description: Bayesian analysis for exponential random graph models using
     <https://acaimo.github.io/Bergm/>.
 License: GPL (>= 2)
 URL: https://acaimo.github.io/Bergm/
-Depends: ergm, R (>= 4.1)
-Imports: coda, graphics, grDevices, Matrix, matrixcalc, MCMCpack,
-        mvtnorm, network, Rglpk, statnet.common, stats, utils
+Depends: 
+    ergm,
+    R (>= 4.1)
+Imports: 
+    coda,
+    graphics,
+    grDevices,
+    Matrix,
+    matrixcalc,
+    MCMCpack,
+    mvtnorm,
+    network,
+    Rglpk,
+    statnet.common,
+    stats,
+    utils
 Config/testthat/edition: 3
 Encoding: UTF-8
 Language: en-US
 LazyData: true
 RoxygenNote: 7.2.3
-Suggests: spelling
-NeedsCompilation: no
-Packaged: 2023-12-06 12:18:02 UTC; albertocaimo
+Suggests: 
+    spelling
