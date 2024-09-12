@@ -10,6 +10,9 @@
 \arguments{
 \item{object}{an \code{R} object of class \code{bergm}.}
 
+\item{returnTable}{logical;
+By default FALSE. Should the results table be returned.}
+
 \item{...}{additional arguments, to be passed to lower-level functions.}
 }
 \description{
