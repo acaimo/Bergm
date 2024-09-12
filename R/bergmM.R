@@ -566,7 +566,8 @@ bergmM <- function(formula,
   clock.end <- Sys.time()
   runtime <- difftime(clock.end, clock.start)
   Theta <- apply(Theta, 2, cbind)
-  FF <- mcmc(Theta)  colnames(FF) <- names(mple)
+  FF <- mcmc(Theta)  
+  colnames(FF) <- names(mple)
 
   AR <- round(1 - rejectionRate(FF)[1], 2)
   names(AR) <- NULL
