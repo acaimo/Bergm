@@ -17,8 +17,18 @@ bergmM(
   seed = NULL,
   startVals = NULL,
   offset.coef = NULL,
+  constraints = NULL,
+  thin = 1,
+  saveEveryX = NULL,
+  saveEveryXName = 'partialBergmEstimate.rda',
+  imputeAllItr = FALSE,
+  imputeLast = TRUE,
   nImp = NULL,
   missingUpdate = NULL,
+  imputeData = NULL,
+  attributeNames = NULL,
+  miceIt = 5,
+  onlyKeepImputation = FALSE,
   ...
 )
 }
