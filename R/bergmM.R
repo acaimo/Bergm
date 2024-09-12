@@ -127,7 +127,7 @@
 #'}
 #' @export
 
-bergmM4 <- function(formula,
+bergmM <- function(formula,
                    burn.in = 100,
                    main.iters = 1000,
                    aux.iters = 1000,
