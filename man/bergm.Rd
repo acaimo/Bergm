@@ -16,6 +16,11 @@ bergm(
   V.proposal = 0.0025,
   startVals = NULL,
   offset.coef = NULL,
+  constraints = NULL,
+  thin = 1,
+  cut.reject = FALSE,
+  saveEveryX = NULL,
+  saveEveryXName = 'partialBergmEstimate.rda',
   ...
 )
 }
@@ -59,6 +64,32 @@ optional starting values for the parameter estimation.}
 
 \item{offset.coef}{vector;
 A vector of coefficients for the offset terms.}
+
+\item{constraints}{formula;
+A formula specifying one or more constraints on the support of the distribution of the networks being modeled, using syntax similar to the formula argument, on the right-hand side. 
+Multiple constraints may be given, separated by “+” and “-” operators. 
+(See \code{\link[ergm]{ergm}} constraints for the explanation of their semantics.) 
+Together with the model terms in the formula and the reference measure, the constraints define the distribution of networks being modeled.}
+
+\item{thin}{count;
+The thinning interval between consecutive observations.}
+
+\item{cut.reject}{logical;
+The thinning interval between consecutive observations.}
+
+\item{saveEveryX}{count;
+If not NULL, the posterior and obtained imputation (only if nImp > 0) will be saved to your working directory at every X iterations.
+Note that this slows down estimation and thus X should not be set too low. 
+By default, the saved data will be in 'partialBergmEstimate.rda' and will be overwritten every X iterations and by other calls of bergm() or bergmM().}
+
+\item{saveEveryXName}{character;
+The Name of the partial estimation object.
+If you run multiple bergm() or bergmM() calls in the same working directory you should change this name so that the calls do not override each other.}
+
+\item{saveEveryXName}{logical;
+By default FALSE. If TRUE, missing network and attribute data are imputed after every iteration.
+This leads to significantly longer estimation times, but potentially overall better estimation.
+It is recommended to initially estimate with imputeAllItr = FALSE to get reasonable starting values and reduce overall estimation time.}
 
 \item{...}{additional arguments, to be passed to lower-level functions.}
 }
