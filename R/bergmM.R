@@ -129,7 +129,8 @@
 bergmM <- function (formula, burn.in = 100, main.iters = 1000, aux.iters = 1000, 
           prior.mean = NULL, prior.sigma = NULL, nchains = NULL, gamma = 0.5, 
           V.proposal = 0.0025, seed = NULL, startVals = NULL, offset.coef = NULL, 
-          constraints = NULL, thin = 1, saveEveryX = NULL, saveEveryXName = "partialBergmEstimate.rda", 
+          constraints = NULL, thin = 1, saveEveryX = NULL, cut.reject = TRUE,
+                    saveEveryXName = "partialBergmEstimate.rda", 
           imputeAllItr = FALSE, imputeLast = TRUE, nImp = NULL, missingUpdate = NULL, 
           imputeData = NULL, attributeNames = NULL, miceIt = 5, onlyKeepImputation = FALSE, 
           ...) 
@@ -487,6 +488,7 @@ bergmM <- function (formula, burn.in = 100, main.iters = 1000, aux.iters = 1000,
     return(out)
   }
   out <- list(Time = runtime, formula = formula, specs = specs, 
+              fixed = fixed, 
               dim = dim, Theta = mcmc(unique(as.matrix(FF))), AR = AR, 
               ess = ess, impNets = impNets, impAttr = impAttr)
   class(out) <- "bergm"
