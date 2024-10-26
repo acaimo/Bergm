@@ -260,28 +260,25 @@ bergm <- function(formula,
   runtime <- difftime(clock.end, clock.start)
 
   Theta <- apply(Theta, 2, cbind)
-  if (cut.reject) {
-    Theta <- unique(Theta)
-  }
-
-  if (thin > 1) {
-    Theta <- Theta[seq(1,nrow(Theta),thin),]
-  }
   FF <- mcmc(Theta)
+  if (cut.reject) {
+    FF <- as.matrix(unique(as.data.frame(FF)))
+  }
+  if (thin > 1) {
+    FF <- FF[seq(1, nrow(FF), thin), ]
+  }
   colnames(FF) <- names(mple)
-
-
+  ess_out <- rep(NA, dim)
+  ess <- round(effectiveSize(FF[, !model$etamap$offsettheta]), 
+               0)
+  ess_out[!model$etamap$offsettheta] <- ess
+  names(ess_out) <- names(mple)
+  fixed <- model$etamap$offsettheta
+  names(fixed) <- names(mple)
+  class(FF) <- 'mcmc'
   AR <- round(1 - rejectionRate(FF)[1], 2)
   names(AR) <- NULL
 
-  colnames(FF) <- names(mple)
-  ess_out <- rep(NA,dim)
-  ess <- round(effectiveSize(FF[,!model$etamap$offsettheta]), 0)
-  ess_out[!model$etamap$offsettheta] <- ess
-  names(ess_out) <- names(mple)
-
-  fixed <- model$etamap$offsettheta
-  names(fixed) <- names(mple)
 
   out = list(Time = runtime,
              formula = formula,
