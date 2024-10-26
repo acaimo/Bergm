@@ -460,9 +460,9 @@ bergmM <- function (formula, burn.in = 100, main.iters = 1000, aux.iters = 1000,
   colnames(FF) <- names(mple)
   AR <- round(1 - rejectionRate(FF)[1], 2)
   names(AR) <- NULL
-  FF <- mcmc(Theta)
+ FF <- mcmc(Theta)
   if (cut.reject) {
-    FF <- unique(FF)
+    FF <- as.matrix(unique(as.data.frame(FF)))
   }
   if (thin > 1) {
     FF <- FF[seq(1, nrow(FF), thin), ]
@@ -475,10 +475,10 @@ bergmM <- function (formula, burn.in = 100, main.iters = 1000, aux.iters = 1000,
   names(ess_out) <- names(mple)
   fixed <- model$etamap$offsettheta
   names(fixed) <- names(mple)
+  class(FF) <- 'mcmc'
   AR <- round(1 - rejectionRate(FF)[1], 2)
   names(AR) <- NULL
-  ess <- round(effectiveSize(FF), 0)
-  names(ess) <- model$coef.names
+ 
   if (is.null(imputeData)) {
     impAttr <- NULL
   }
