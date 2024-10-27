@@ -490,7 +490,7 @@ bergmM <- function (formula, burn.in = 100, main.iters = 1000, aux.iters = 1000,
   out <- list(Time = runtime, formula = formula, specs = specs, 
               fixed = fixed, 
               dim = dim, Theta = mcmc(unique(as.matrix(FF))), AR = AR, 
-              ess = ess, impNets = impNets, impAttr = impAttr)
+              ess = ess_out, impNets = impNets, impAttr = impAttr)
   class(out) <- "bergm"
   return(out)
 }
