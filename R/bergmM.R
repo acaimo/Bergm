@@ -458,6 +458,8 @@ bergmM <- function (formula, burn.in = 100, main.iters = 1000, aux.iters = 1000,
   runtime <- difftime(clock.end, clock.start)
   Theta <- apply(Theta, 2, cbind)
   FF <- mcmc(Theta)
+  AR <- round(1 - rejectionRate(FF)[1], 2)
+  names(AR) <- NULL
   colnames(FF) <- names(mple)
   AR <- round(1 - rejectionRate(FF)[1], 2)
   names(AR) <- NULL
@@ -477,8 +479,6 @@ bergmM <- function (formula, burn.in = 100, main.iters = 1000, aux.iters = 1000,
   fixed <- model$etamap$offsettheta
   names(fixed) <- names(mple)
   class(FF) <- 'mcmc'
-  AR <- round(1 - rejectionRate(FF)[1], 2)
-  names(AR) <- NULL
  
   if (is.null(imputeData)) {
     impAttr <- NULL
