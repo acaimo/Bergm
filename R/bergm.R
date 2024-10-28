@@ -260,6 +260,9 @@ bergm <- function(formula,
 
   Theta <- apply(Theta, 2, cbind)
   FF <- mcmc(Theta)
+  AR <- round(1 - rejectionRate(FF)[1], 2)
+  names(AR) <- NULL
+
   if (cut.reject) {
     FF <- as.matrix(unique(as.data.frame(FF)))
   }
@@ -275,8 +278,6 @@ bergm <- function(formula,
   fixed <- model$etamap$offsettheta
   names(fixed) <- names(mple)
   class(FF) <- 'mcmc'
-  AR <- round(1 - rejectionRate(FF)[1], 2)
-  names(AR) <- NULL
 
 
   out = list(Time = runtime,
