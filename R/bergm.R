@@ -92,18 +92,17 @@ bergm <- function(formula,
                   saveEveryX = NULL,
                   saveEveryXName = 'partialBergmEstimate.rda',
                   ...) {
-  library(statnet)
-  library(coda)
-  library(mvtnorm)
   y <- ergm.getnetwork(formula)
   model <- ergm_model(formula, y)
   specs <- unlist(sapply(model$terms, '[', 'coef.names'), use.names = FALSE)
   sy <- summary(formula)
   dim <- length(sy)
-  if (dim == 1)
+  if (dim == 1){
     stop("Model dimension must be greater than 1.")
-  if (any(is.na(as.matrix.network(y))))
+  }
+  if (any(is.na(as.matrix.network(y)))) {
     print("Network has missing data. Use bergmM() instead.")
+  }
   if (!is.null(offset.coef)) {
     if (any(offset.coef %in% c(NaN, NA))) {
       stop("NaN, NA are not allowed in offset.coef.")
