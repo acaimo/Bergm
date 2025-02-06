@@ -14,6 +14,8 @@
 #' @import Matrix
 #' @import statnet.common
 #' @import Rglpk
+#' @import stringr
+#' @import mice
 #' @importFrom matrixcalc is.positive.definite
 #' @importFrom grDevices dev.new
 #' @importFrom graphics axis boxplot lines par plot title 
