@@ -10,5 +10,5 @@
 
 ### How to cite **Bergm**
 
-Caimo, A., Bouranis, L., Krause, R., and Friel, N. (2014). Statistical Network Analysis with Bergm. *Journal of Statistical Software*, 104(1), 1–23. doi: https://doi.org/10.18637/jss.v104.i01. 
+Caimo, A., Bouranis, L., Krause, R., and Friel, N. (2022). Statistical Network Analysis with Bergm. *Journal of Statistical Software*, 104(1), 1–23. doi: https://doi.org/10.18637/jss.v104.i01. 
 
