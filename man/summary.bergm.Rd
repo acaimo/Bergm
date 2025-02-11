@@ -5,7 +5,7 @@
 \alias{summary.bergm}
 \title{Summary of BERGM posterior output}
 \usage{
-\method{summary}{bergm}(object, ...)
+\method{summary}{bergm}(object, returnTable = FALSE, ...)
 }
 \arguments{
 \item{object}{an \code{R} object of class \code{bergm}.}
