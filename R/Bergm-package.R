@@ -19,5 +19,5 @@
 #' @importFrom graphics axis boxplot lines par plot title 
 #' @importFrom stats cov dbinom density glm optim quantile runif simulate var vcov
 #' @importFrom utils capture.output setTxtProgressBar txtProgressBar
-#' @docType package
+#' @docType _PACKAGE
 NULL
