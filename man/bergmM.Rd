@@ -20,7 +20,8 @@ bergmM(
   constraints = NULL,
   thin = 1,
   saveEveryX = NULL,
-  saveEveryXName = 'partialBergmEstimate.rda',
+  cut.reject = TRUE,
+  saveEveryXName = "partialBergmEstimate.rda",
   imputeAllItr = FALSE,
   imputeLast = TRUE,
   nImp = NULL,
@@ -45,12 +46,10 @@ and <model terms> are \code{ergm-terms}.}
 \item{aux.iters}{count; number of auxiliary iterations used for network simulation.}
 
 \item{prior.mean}{vector; mean vector of the multivariate Normal prior.
-By default set to a vector of 0's. 
-Note that several ergm.terms add more than one parameter to the model. You need to adjust your priors accordingly}
+By default set to a vector of 0's. Note that several ergm.terms add more than one parameter to the model. You need to adjust your priors accordingly}
 
 \item{prior.sigma}{square matrix; variance/covariance matrix for the multivariate Normal prior.
-By default set to a diagonal matrix with every diagonal entry equal to 100. 
-Note that several ergm.terms add more than one parameter to the model. You need to adjust your priors accordingly}
+By default set to a diagonal matrix with every diagonal entry equal to 100. Note that several ergm.terms add more than one parameter to the model. You need to adjust your priors accordingly}
 
 \item{nchains}{count; number of chains of the population MCMC.
 By default set to twice the model dimension (number of model terms).}
@@ -61,78 +60,67 @@ By default set to twice the model dimension (number of model terms).}
 By default set to 0.0025.}
 
 \item{seed}{count;
-Random number seed for the Bergm estimation.}
+random number seed for the Bergm estimation.}
 
 \item{startVals}{vector;
-Optional starting values for the parameter estimation. 
-Note that several ergm.terms add more than one parameter to the model. You need to adjust your priors accordingly}
+optional starting values for the parameter estimation.}
 
 \item{offset.coef}{vector;
-A vector of coefficients for the offset terms.}
+a vector of coefficients for the offset terms.}
 
 \item{constraints}{formula;
-A formula specifying one or more constraints on the support of the distribution of the networks being modeled, using syntax similar to the formula argument, on the right-hand side. 
-Multiple constraints may be given, separated by “+” and “-” operators. 
-(See \code{\link[ergm]{ergm}} constraints for the explanation of their semantics.) 
-Together with the model terms in the formula and the reference measure, the constraints define the distribution of networks being modeled.}
+A formula specifying one or more constraints on the support of the distribution of the networks being modeled, using syntax similar to the formula argument, on the right-hand side. Multiple constraints may be given, separated by “+” and “-” operators. (See \code{\link[ergm]{ergm}} constraints for the explanation of their semantics.) Together with the model terms in the formula and the reference measure, the constraints define the distribution of networks being modeled.}
 
 \item{thin}{count;
 The thinning interval between consecutive observations.}
 
+\item{saveEveryX}{count; If not NULL, the posterior and obtained imputation (only if nImp > 0) will be saved to your working directory at every X iterations.
+Note that this slows down estimation and thus X should not be set too low. By default, the saved data will be in 'partialBergmEstimate.rda' and will be overwritten every X iterations and by other calls of bergm() or bergmM().}
+
 \item{cut.reject}{logical;
-The thinning interval between consecutive observations.}
-
-\item{saveEveryX}{count;
-If not NULL, the posterior and obtained imputation (only if nImp > 0) will be saved to your working directory at every X iterations.
-Note that this slows down estimation and thus X should not be set too low. 
-By default, the saved data will be in 'partialBergmEstimate.rda' and will be overwritten every X iterations and by other calls of bergm() or bergmM().}
-
-\item{saveEveryXName}{character;
-The Name of the partial estimation object.
-If you run multiple bergm() or bergmM() calls in the same working directory you should change this name so that the calls do not override each other.}
-
-\item{saveEveryXName}{logical;
-By default FALSE. If TRUE, missing network and attribute data are imputed after every iteration.
-This leads to significantly longer estimation times, but potentially overall better estimation.
-It is recommended to initially estimate with imputeAllItr = FALSE to get reasonable starting values and reduce overall estimation time.}
-
-\item{imputeLast}{logical;
-By default TRUE and in line with Koskinen et al. 2010.
-If FALSE, network imputations will be performed with a random draw from the so far accepted parameter values.}
-
-\item{nImp}{count;
 default TRUE. By default bergm()/bergmM() will save the last accepted theta to the posterior if the new proposal is rejected.
 This artificially will increase the auto-correlation of consecutive parameters.}
 
+\item{saveEveryXName}{character; the Name of the partial estimation object.
+If you run multiple bergm()/bergmM() calls in the same working directory you should change this name so that the calls do not override each other.}
+
+\item{imputeAllItr}{logical;
+default FALSE. If TRUE, missing network and attribute data are imputed after every iteration.
+This leads to much (!!!) longer estimation times, but potentially overall better estimation.
+It is recommended to initially estimate with imputeAllItr = FALSE to get reasonable starting values and reduce overall estimation time.}
+
+\item{imputeLast}{logical;
+default TRUE and in line with Koskinen et al. 2010.
+If FALSE, network imputations will be performed with a random draw from the so far accepted parameter values.}
+
+\item{nImp}{count;
+number of imputed networks to be returned. If null, no imputed network will be returned.}
+
 \item{missingUpdate}{count;
-Number of tie updates in each imputation step. 
-By default equal to number of missing ties. 
+number of tie updates in each imputation step.
+By default equal to the number of missing ties.
 Smaller numbers increase speed. Larger numbers lead to better sampling.}
 
 \item{imputeData}{data.frame;
-A data.frame with all attribute variables that should be imputed and additional attributes that should be used for the imputation.
-All non-numeric variables need to be specified as.factors().
-Names of vertex.attributes and corressponding variable names in the imputeData must be identical.}
+a data.frame with all attribute variables that should be imputed and additional attributes that should be used for the imputation.
+All non-numeric variables need to be specified as.factors.
+Names of vertex.attributes and variable names need to be identical.}
 
-\item{attributeNames}{character vector;
-A vector with the names of all variables that need to be imputed.
+\item{attributeNames}{character vector,
+a vector with the names of all variables that need to be imputed.
 These names need to be identical with the vertex.attributes and must be part of the names of the \code{imputeData} data.frame.}
 
-\item{miceIt}{count;
-By default 5. Number of iterations in the MICE imputation. 
-Larger numbers will lead to better attribute imputation but increase estimation time.}
+\item{miceIt}{count,
+number of iterations in the MICE imputation. Default is 5.}
 
-\item{onlyKeepImputation}{logical;
-By defualt FALSE. Should only imputations be returned, and no bergmM() estimate (only recommended after you made sure that the model estimates properly).
-This can save memory.}
+\item{onlyKeepImputation}{logical,
+Should only imputations be returned, and no bergm estimate (only recommended after you made sure that the model estimates properly).}
 
 \item{...}{additional arguments, to be passed to lower-level functions.}
 }
 \description{
 Function to fit Bayesian exponential random graphs models under missing data
-using the approximate exchange algorithm. The function can also handle missing data in the attributes. 
-Do note that this imputation is not following Koskinen et al. 2013 and resulting parameters are no longer following an ERGM distribution but are from a mixture distribution. 
-The attribute imputation algorithm is thus not guranteed to deliver proper ERGM results and should be used with caution.
+using the approximate exchange algorithm.
 }
 \examples{
 \dontrun{
@@ -165,15 +153,11 @@ Social Networks, 33(1), 41-55. \url{https://arxiv.org/abs/1007.5192}
 Caimo, A. and Friel, N. (2014), "Bergm: Bayesian Exponential Random Graphs in R,"
 Journal of Statistical Software, 61(2), 1-25. \url{https://www.jstatsoft.org/v61/i02}
 
-Koskinen, J.H., Robins, G.L., Pattison, P.E. (2010), "Analysing exponential
+Koskinen, J.H., Robins, G.L., and Pattison, P.E. (2010), "Analysing exponential
 random graph (p-star) models with missing data using Bayesian data augmentation,"
 Statistical Methodology 7(3), 366-384.
 
-Koskinen, J. H., Robins, G. L., Wang, P., & Pattison, P. E. (2013). "Bayesian analysis
-for partially observed network data, missing ties, attributes and actors."
-Social networks, 35(4), 514-527.
-
-Krause, R.W., Huisman, M., Steglich, C., Snijders, T.A. (2020), "Missing data in 
-cross-sectional networks-An extensive comparison of missing data treatment methods", 
+Krause, R.W., Huisman, M., Steglich, C., and Snijders, T.A. (2020), "Missing data in
+cross-sectional networks-An extensive comparison of missing data treatment methods",
 Social Networks 62: 99-112.
 }
