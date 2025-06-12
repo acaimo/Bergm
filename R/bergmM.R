@@ -15,10 +15,10 @@
 #' @param aux.iters count; number of auxiliary iterations used for network simulation.
 #'
 #' @param prior.mean vector; mean vector of the multivariate Normal prior.
-#' By default set to a vector of 0's. Note that several ergm.terms add more than one parameter to the model. You need to adjust your priors accordingly
+#' By default set to a vector of 0's. Note that several ergm.terms add more than one parameter to the model. You need to adjust your priors accordingly.
 #'
 #' @param prior.sigma square matrix; variance/covariance matrix for the multivariate Normal prior.
-#' By default set to a diagonal matrix with every diagonal entry equal to 100. Note that several ergm.terms add more than one parameter to the model. You need to adjust your priors accordingly
+#' By default set to a diagonal matrix with every diagonal entry equal to 100. Note that several ergm.terms add more than one parameter to the model. You need to adjust your priors accordingly.
 #'
 #' @param nchains count; number of chains of the population MCMC.
 #' By default set to twice the model dimension (number of model terms).
