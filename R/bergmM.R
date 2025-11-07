@@ -44,7 +44,7 @@
 #' The thinning interval between consecutive observations.
 #'
 #' @param cut.reject logical;
-#' default TRUE. By default bergm()/bergmM() will save the last accepted theta to the posterior if the new proposal is rejected.
+#' default FALSE. By default bergm()/bergmM() will save the last accepted theta to the posterior if the new proposal is rejected.
 #' This artificially will increase the auto-correlation of consecutive parameters.
 #'
 #' @param saveEveryX count; If not NULL, the posterior and obtained imputation (only if nImp > 0) will be saved to your working directory at every X iterations.
@@ -67,7 +67,7 @@
 #'
 #' @param missingUpdate count;
 #' number of tie updates in each imputation step.
-#' By default equal to the number of missing ties.
+#' By default equal to twice the number of missing ties.
 #' Smaller numbers increase speed. Larger numbers lead to better sampling.
 #'
 #' @param imputeData data.frame;
@@ -141,6 +141,7 @@ bergmM <- function(formula,
                    offset.coef = NULL,
                    constraints = NULL,
                    thin = 1,
+                   cut.reject = FALSE,
                    saveEveryX = NULL,
                    saveEveryXName = 'partialBergmEstimate.rda',
                    imputeAllItr = FALSE,
@@ -152,117 +153,14 @@ bergmM <- function(formula,
                    miceIt = 5,
                    onlyKeepImputation = FALSE,
                    ...) {
-
+  
   if (is.null(seed)) {
     set.seed(sample(1:999, 1))
   } else {
     set.seed(seed)
   }
   y <- ergm.getnetwork(formula)
-
-
-  imputeAttributes <- function(y, attributeNames, imputeData) {
-    imputeData2 <- imputeData
-    y2n <- as.matrix.network(y)
-
-    if (y$gal$directed) {
-      imputeData2$indegreeImp <- colSums(y2n, na.rm = TRUE)
-      imputeData2$outdegreeImp <- rowSums(y2n)
-      impMat <- as.data.frame(matrix(NA,
-                                     nrow = nrow(y2n),
-                                     ncol = 0))
-      for (i in 1:length(attributeNames)) {
-        if (is.numeric(imputeData[,attributeNames[i]])) {
-          avgInAlt <- rowSums(sweep(t(y2n),
-                                    MARGIN = 2,
-                                    imputeData[,attributeNames[i]],
-                                    '*'),
-                              na.rm = TRUE) / rowSums(t(y2n), na.rm = TRUE)
-          avgInAlt[is.nan(avgInAlt)] <- NA
-
-          impMat <- cbind(impMat, avgInAlt)
-
-          avgOutAlt <- rowSums(sweep(y2n,
-                                     MARGIN = 2,
-                                     imputeData[,attributeNames[i]],
-                                     '*'),
-                               na.rm = TRUE) / rowSums(y2n, na.rm = TRUE)
-          avgOutAlt[is.nan(avgOutAlt)] <- NA
-
-          impMat <- cbind(impMat, avgOutAlt)
-        }
-        inMax <- c()
-        outMax <- c()
-
-        for (j in 1:nrow(y2n)) {
-          inMax <- c(inMax, ifelse(
-            is.null(names(which.max(table(
-              imputeData[,attributeNames[i]][as.logical(y2n[,j])])))),
-            yes = NA,
-            no = names(which.max(table(
-              imputeData[,attributeNames[i]][as.logical(y2n[,j])])))))
-
-          outMax <- c(outMax, ifelse(
-            is.null(names(which.max(table(
-              imputeData[,attributeNames[i]][as.logical(y2n[j,])])))),
-            yes = NA,
-            no = names(which.max(table(
-              imputeData[,attributeNames[i]][as.logical(y2n[j,])])))))
-        }
-
-        impMat <- cbind(impMat, as.factor(inMax))
-        impMat <- cbind(impMat, as.factor(outMax))
-
-
-
-      }
-      names(impMat) <- c(paste('impVarLongNameNoOneWillUse',
-                               1:ncol(impMat),
-                               sep = ''))
-      imputeData2 <- cbind(imputeData2,impMat)
-    } else {
-
-      imputeData2$degreeImp <- rowSums(y2n)
-      impMat <- as.data.frame(matrix(NA,
-                                     nrow = nrow(y2n),
-                                     ncol = 0))
-      for (i in 1:length(attributeNames)) {
-        if (is.numeric(imputeData[,attributeNames[i]])) {
-          avgAlt <- rowSums(sweep(y2n, MARGIN = 2,
-                                  imputeData[,attributeNames[i]],
-                                  '*'),
-                            na.rm = TRUE) / rowSums(y2n, na.rm = TRUE)
-          avgAlt[is.nan(avgAlt)] <- NA
-
-          impMat <- cbind(impMat, avgAlt)
-        }
-        inMax <- c()
-
-        for (j in 1:nrow(y2n)) {
-          inMax <- c(inMax, ifelse(
-            is.null(names(which.max(table(
-              imputeData[,attributeNames[i]][as.logical(y2n[,j])])))),
-            yes = NA,
-            no = names(which.max(table(
-              imputeData[,attributeNames[i]][as.logical(y2n[,j])])))))
-        }
-        impMat <- cbind(impMat, as.factor(inMax))
-      }
-      names(impMat) <- c(paste('impVarLongNameNoOneWillUse',
-                               1:ncol(impMat),
-                               sep = ''))
-      imputeData2 <- cbind(imputeData2,impMat)
-    }
-    imputeData2 <- complete(mice(imputeData2,
-                                 m = 1,
-                                 printFlag = FALSE,
-                                 maxit = miceIt,
-                                 remove_collinear = FALSE))
-    imputeData2 <- imputeData2[,names(imputeData2) %in% names(imputeData)]
-    return(imputeData2)
-  }
-
-
+  
   if (!is.null(imputeData)) {
     imputeData2 <- imputeAttributes(y = y,
                                     attributeNames = attributeNames,
@@ -274,19 +172,19 @@ bergmM <- function(formula,
       set.vertex.attribute(y, i, imputeData2[,i])
     }
   }
-
+  
   model <- ergm_model(formula, y)
   specs <- unlist(sapply(model$terms, '[', 'coef.names'), use.names = FALSE)
-
+  
   if (!is.null(imputeData)) {
     formula <- as.formula(paste('y','~',as.character(formula)[3]))
   }
-
+  
   sy <- summary(formula)
   dim <- length(sy)
-
+  
   if (dim == 1) {stop("Model dimension must be greater than 1")}
-
+  
   if (!is.null(offset.coef)) {
     if (any(offset.coef %in% c(Inf, -Inf, NaN, NA))) {
       stop("Inf, -Inf, NaN, NA are not allowed for offset.coef. \n
@@ -294,13 +192,13 @@ bergmM <- function(formula,
            (e.g., 1000 or -1000).")
     }
   }
-
+  
   if (!any(is.na(as.matrix.network(y))) && is.null(imputeData)) {
     print("Network has no missing data. \n
           No attribute data to impute was given. \n
           No imputation will be provided.")
   }
-
+  
   impNets <- NULL
   if (!is.null(nImp)) {
     nImp <- max(0, min(nImp, main.iters))
@@ -311,24 +209,24 @@ bergmM <- function(formula,
       impAttr <- vector("list", nImp)
     }
   }
-
+  
   missingTies <- matrix(0, y$gal$n, y$gal$n)
   missingTies[is.na(as.matrix.network(y))] <- 1
   missingTies <- as.edgelist(as.network(missingTies), n = y$gal$n)
-
+  
   if (is.null(missingUpdate)) {
-    missingUpdate <- sum(is.na(as.matrix.network(y)))
+    missingUpdate <- sum(is.na(as.matrix.network(y))) * 2
   }
-
-
+  
+  
   impNet <- y
   f <- as.character(formula)
   currentFormula <- formula(paste("impNet", f[3:length(f)], sep = " ~ "))
-
+  
   if (is.null(constraints)) {
     constraints <- ~.
   }
-
+  
   y0 <- simulate(currentFormula,
                  coef = rep(0, dim),
                  nsim = 1,
@@ -336,12 +234,12 @@ bergmM <- function(formula,
                                             MCMC.interval = 1),
                  return.args = "ergm_state",
                  constraints = constraints)$object
-
+  
   control <- control.ergm(MCMC.burnin = aux.iters,
                           MCMC.interval = 1,
                           MCMC.samplesize = 1,
                           ...)
-
+  
   if (!is.null(control$init)) {
     if (length(control$init) != length(model$etamap$offsettheta)) {
       stop("Invalid starting parameter vector control$init: \n
@@ -352,7 +250,7 @@ bergmM <- function(formula,
   } else {
     control$init <- rep(NA, length(model$etamap$offsettheta))
   }
-
+  
   if (!is.null(offset.coef)) {
     if (length(control$init[model$etamap$offsettheta]) !=
         length(offset.coef)) {
@@ -362,17 +260,17 @@ bergmM <- function(formula,
            " got ", length(offset.coef), ".")}
     control$init[model$etamap$offsettheta] <- offset.coef
   }
-
+  
   if (any(is.na(control$init) & model$etamap$offsettheta)) {
     stop("The model contains offset terms whose parameter values have not been specified:",
          paste.and(specs[is.na(control$init) |
                            model$offsettheta]), ".", sep = "")
   }
-
+  
   if (!is.null(saveEveryX)) {
     saveXseq <- seq(1, main.iters, saveEveryX)
   }
-
+  
   if (is.null(prior.mean)) {
     prior.mean <- rep(0, dim)
   }
@@ -384,12 +282,12 @@ bergmM <- function(formula,
   }
   S.prop <- diag(V.proposal, dim, dim)
   Theta <- array(NA, c(main.iters, dim, nchains))
-
+  
   suppressMessages(mple <- ergm(formula,
                                 estimate = "MPLE",
                                 verbose = FALSE,
                                 offset.coef = offset.coef) |> stats::coef())
-
+  
   if (any(is.infinite(mple))) {
     offset.coeffs <- rep(NA,length(model$etamap$offsettheta))
     if (!is.null(offset.coef)) {
@@ -411,14 +309,14 @@ bergmM <- function(formula,
           '\n All such ties will be forced to exist.\n\n')
       offset.coeffs[!model$etamap$offsettheta][which(mple == Inf)] <- Inf
     }
-
+    
     model$etamap$offsettheta[!model$etamap$offsettheta][
       which(is.infinite(mple))] <- TRUE
     offset.coeffs <- na.omit(offset.coeffs)
     attributes(offset.coeffs) <- NULL
     offset.coef <- offset.coeffs
   }
-
+  
   if (!is.null(startVals)) {
     theta <- matrix(startVals + runif(dim * nchains, min = -0.1,
                                       max = 0.1), dim, nchains)
@@ -426,14 +324,14 @@ bergmM <- function(formula,
     theta <- matrix(mple + runif(dim * nchains, min = -0.1,
                                  max = 0.1), dim, nchains)
   }
-
+  
   theta[model$etamap$offsettheta, ] <- offset.coef
-
+  
   acc.counts <- rep(0L, nchains)
   theta1 <- rep(NA, dim)
   tot.iters <- burn.in + main.iters
   lastPar <- NULL
-
+  
   if (!is.null(constraints)) {
     impConstraints <- as.formula(str_c("~ fixallbut(missingTies)",
                                        str_split(constraints,
@@ -450,20 +348,20 @@ bergmM <- function(formula,
       theta1 <- theta[, h] +
         gamma * apply(theta[,sample(seq(1,nchains)[-h], 2)], 1, diff) +
         rmvnorm(1, sigma = S.prop)[1,]
-
+      
       theta1[model$etamap$offsettheta] <- offset.coef
-
+      
       delta <- ergm_MCMC_sample(y0,
                                 theta   = theta1,
                                 control = control)$stats[[1]][1,] - sy
-
+      
       pr <- dmvnorm(rbind(theta1, theta[, h]),
                     mean = prior.mean,
                     sigma = prior.sigma,
                     log = TRUE)
-
+      
       beta <- (theta[, h] - theta1) %*% delta + pr[1] - pr[2]
-
+      
       if (beta >= log(runif(1))) {
         theta[, h] <- theta1
         if (k > burn.in) {
@@ -471,14 +369,14 @@ bergmM <- function(formula,
         }
         accepted <- TRUE
         lastPar <- theta1
-
+        
         if (k > burn.in) {
           acc.counts[h] <- acc.counts[h] + 1
         }
       }
       if (accepted || (imputeAllItr && !is.null(lastPar))) {
         if (any(is.na(as.matrix.network(y)))) {
-
+          
           if (!all(is.na(Theta)) && !imputeLast) {
             impPars <- Theta[sample(1:(k - burn.in),1), , sample(1:nchains,1)]
             counter <- 0
@@ -492,9 +390,9 @@ bergmM <- function(formula,
           } else {
             impPars <- lastPar
           }
-
-
-
+          
+          
+          
           impNet <- simulate(currentFormula,
                              coef = impPars,
                              output = "network",
@@ -504,7 +402,7 @@ bergmM <- function(formula,
                              control = control.simulate(
                                MCMC.burnin = missingUpdate))
         }
-
+        
         if (!is.null(imputeData)) {
           imputeData2 <- imputeAttributes(y = impNet,
                                           attributeNames = attributeNames,
@@ -518,7 +416,7 @@ bergmM <- function(formula,
                                  imputeData2[,i])
           }
         }
-
+        
         y0 <- simulate(currentFormula,
                        coef = rep(0, dim),
                        nsim = 1,
@@ -543,7 +441,7 @@ bergmM <- function(formula,
         impIter <- impIter + 1
       }
     }
-
+    
     if (!is.null(saveEveryX)) {
       if (k %in% saveXseq) {
         if (is.null(nImp)) {
@@ -559,7 +457,7 @@ bergmM <- function(formula,
         save(partialBergmEstimate, file = saveEveryXName)
       }
     }
-
+    
   }
   clock.end <- Sys.time()
   runtime <- difftime(clock.end, clock.start)
@@ -568,10 +466,10 @@ bergmM <- function(formula,
   Theta <- apply(Theta, 2, cbind)
   FF <- mcmc(Theta)  
   colnames(FF) <- names(mple)
-
+  
   AR <- round(1 - rejectionRate(FF)[1], 2)
   names(AR) <- NULL
-
+  
   FF <- mcmc(Theta)
   if (cut.reject) {
     FF <- unique(FF)
@@ -584,7 +482,7 @@ bergmM <- function(formula,
   ess <- round(effectiveSize(FF[,!model$etamap$offsettheta]), 0)
   ess_out[!model$etamap$offsettheta] <- ess
   names(ess_out) <- names(mple)
-
+  
   fixed <- model$etamap$offsettheta
   names(fixed) <- names(mple)
   AR <- round(1 - rejectionRate(FF)[1], 2)
@@ -594,13 +492,13 @@ bergmM <- function(formula,
   if (is.null(imputeData)) {
     impAttr <- NULL
   }
-
+  
   if (onlyKeepImputation) {
     out <- list(impNets = impNets,
                 impAttr = impAttr)
     return(out)
   }
-
+  
   out <- list(Time = runtime,
               formula = formula,
               specs = specs,
@@ -612,4 +510,107 @@ bergmM <- function(formula,
               impAttr = impAttr)
   class(out) <- "bergm"
   return(out)
+}
+
+
+
+
+imputeAttributes <- function(y, attributeNames, imputeData) {
+  imputeData2 <- imputeData
+  y2n <- as.matrix.network(y)
+  
+  if (y$gal$directed) {
+    imputeData2$indegreeImp <- colSums(y2n, na.rm = TRUE)
+    imputeData2$outdegreeImp <- rowSums(y2n)
+    impMat <- as.data.frame(matrix(NA,
+                                   nrow = nrow(y2n),
+                                   ncol = 0))
+    for (i in 1:length(attributeNames)) {
+      if (is.numeric(imputeData[,attributeNames[i]])) {
+        avgInAlt <- rowSums(sweep(t(y2n),
+                                  MARGIN = 2,
+                                  imputeData[,attributeNames[i]],
+                                  '*'),
+                            na.rm = TRUE) / rowSums(t(y2n), na.rm = TRUE)
+        avgInAlt[is.nan(avgInAlt)] <- NA
+        
+        impMat <- cbind(impMat, avgInAlt)
+        
+        avgOutAlt <- rowSums(sweep(y2n,
+                                   MARGIN = 2,
+                                   imputeData[,attributeNames[i]],
+                                   '*'),
+                             na.rm = TRUE) / rowSums(y2n, na.rm = TRUE)
+        avgOutAlt[is.nan(avgOutAlt)] <- NA
+        
+        impMat <- cbind(impMat, avgOutAlt)
+      }
+      inMax <- c()
+      outMax <- c()
+      
+      for (j in 1:nrow(y2n)) {
+        inMax <- c(inMax, ifelse(
+          is.null(names(which.max(table(
+            imputeData[,attributeNames[i]][as.logical(y2n[,j])])))),
+          yes = NA,
+          no = names(which.max(table(
+            imputeData[,attributeNames[i]][as.logical(y2n[,j])])))))
+        
+        outMax <- c(outMax, ifelse(
+          is.null(names(which.max(table(
+            imputeData[,attributeNames[i]][as.logical(y2n[j,])])))),
+          yes = NA,
+          no = names(which.max(table(
+            imputeData[,attributeNames[i]][as.logical(y2n[j,])])))))
+      }
+      
+      impMat <- cbind(impMat, as.factor(inMax))
+      impMat <- cbind(impMat, as.factor(outMax))
+      
+      
+      
+    }
+    names(impMat) <- c(paste('impVarLongNameNoOneWillUse',
+                             1:ncol(impMat),
+                             sep = ''))
+    imputeData2 <- cbind(imputeData2,impMat)
+  } else {
+    
+    imputeData2$degreeImp <- rowSums(y2n)
+    impMat <- as.data.frame(matrix(NA,
+                                   nrow = nrow(y2n),
+                                   ncol = 0))
+    for (i in 1:length(attributeNames)) {
+      if (is.numeric(imputeData[,attributeNames[i]])) {
+        avgAlt <- rowSums(sweep(y2n, MARGIN = 2,
+                                imputeData[,attributeNames[i]],
+                                '*'),
+                          na.rm = TRUE) / rowSums(y2n, na.rm = TRUE)
+        avgAlt[is.nan(avgAlt)] <- NA
+        
+        impMat <- cbind(impMat, avgAlt)
+      }
+      inMax <- c()
+      
+      for (j in 1:nrow(y2n)) {
+        inMax <- c(inMax, ifelse(is.null(names(which.max(table(
+            imputeData[,attributeNames[i]][as.logical(y2n[,j])])))),
+          yes = NA,
+          no = names(which.max(table(
+            imputeData[,attributeNames[i]][as.logical(y2n[,j])])))))
+      }
+      impMat <- cbind(impMat, as.factor(inMax))
+    }
+    names(impMat) <- c(paste('impVarLongNameNoOneWillUse',
+                             1:ncol(impMat),
+                             sep = ''))
+    imputeData2 <- cbind(imputeData2,impMat)
+  }
+  imputeData2 <- mice::complete(mice::mice(imputeData2,
+                                           m = 1,
+                                           printFlag = FALSE,
+                                           maxit = miceIt,
+                                           remove_collinear = FALSE))
+  imputeData2 <- imputeData2[,names(imputeData2) %in% names(imputeData)]
+  return(imputeData2)
 }
