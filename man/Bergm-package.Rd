@@ -10,3 +10,10 @@
 Bayesian exponential random graph models using advanced 
 computational methods.
 }
+\seealso{
+Useful links:
+\itemize{
+  \item \url{https://acaimo.github.io/Bergm/}
+}
+
+}

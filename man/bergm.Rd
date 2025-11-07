@@ -20,42 +20,42 @@ bergm(
   thin = 1,
   cut.reject = FALSE,
   saveEveryX = NULL,
-  saveEveryXName = 'partialBergmEstimate.rda',
+  saveEveryXName = "partialBergmEstimate.rda",
   ...
 )
 }
 \arguments{
-\item{formula}{formula; 
+\item{formula}{formula;
 an \code{\link[ergm]{ergm}} formula object,
 of the form  <network> ~ <model terms>
 where <network> is a \code{\link[network]{network}} object
 and <model terms> are \code{ergm-terms}.}
 
-\item{prior.mean}{vector; 
+\item{prior.mean}{vector;
 mean vector of the multivariate Normal prior.
 By default set to a vector of 0's.}
 
-\item{prior.sigma}{square matrix; 
+\item{prior.sigma}{square matrix;
 variance/covariance matrix for the multivariate Normal prior.
 By default set to a diagonal matrix with every diagonal entry equal to 100.}
 
-\item{burn.in}{count; 
+\item{burn.in}{count;
 number of burn-in iterations for every chain of the population.}
 
-\item{main.iters}{count; 
+\item{main.iters}{count;
 number of iterations for every chain of the population.}
 
-\item{aux.iters}{count; 
+\item{aux.iters}{count;
 number of auxiliary iterations used for network simulation.}
 
-\item{nchains}{count; 
+\item{nchains}{count;
 number of chains of the population MCMC.
 By default set to twice the model dimension (number of model terms).}
 
-\item{gamma}{scalar; 
+\item{gamma}{scalar;
 parallel adaptive direction sampling move factor.}
 
-\item{V.proposal}{count; 
+\item{V.proposal}{count;
 diagonal entry for the multivariate Normal proposal.
 By default set to 0.0025.}
 
@@ -65,31 +65,11 @@ optional starting values for the parameter estimation.}
 \item{offset.coef}{vector;
 A vector of coefficients for the offset terms.}
 
-\item{constraints}{formula;
-A formula specifying one or more constraints on the support of the distribution of the networks being modeled, using syntax similar to the formula argument, on the right-hand side. 
-Multiple constraints may be given, separated by “+” and “-” operators. 
-(See \code{\link[ergm]{ergm}} constraints for the explanation of their semantics.) 
-Together with the model terms in the formula and the reference measure, the constraints define the distribution of networks being modeled.}
+\item{saveEveryX}{count; If not NULL, the posterior and obtained imputation (only if nImp > 0) will be saved to your working directory at every X iterations.
+Note that this slows down estimation and thus X should not be set too low. By default, the saved data will be in 'partialBergmEstimate.rda' and will be overwritten every X iterations and by other calls of bergm() or bergmM().}
 
-\item{thin}{count;
-The thinning interval between consecutive observations.}
-
-\item{cut.reject}{logical;
-The thinning interval between consecutive observations.}
-
-\item{saveEveryX}{count;
-If not NULL, the posterior and obtained imputation (only if nImp > 0) will be saved to your working directory at every X iterations.
-Note that this slows down estimation and thus X should not be set too low. 
-By default, the saved data will be in 'partialBergmEstimate.rda' and will be overwritten every X iterations and by other calls of bergm() or bergmM().}
-
-\item{saveEveryXName}{character;
-The Name of the partial estimation object.
-If you run multiple bergm() or bergmM() calls in the same working directory you should change this name so that the calls do not override each other.}
-
-\item{saveEveryXName}{logical;
-By default FALSE. If TRUE, missing network and attribute data are imputed after every iteration.
-This leads to significantly longer estimation times, but potentially overall better estimation.
-It is recommended to initially estimate with imputeAllItr = FALSE to get reasonable starting values and reduce overall estimation time.}
+\item{saveEveryXName}{character; the Name of the partial estimation object.
+If you run multiple bergm()/bergmM() calls in the same working directory you should change this name so that the calls do not override each other.}
 
 \item{...}{additional arguments, to be passed to lower-level functions.}
 }
