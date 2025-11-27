@@ -164,7 +164,8 @@ bergmM <- function(formula,
   if (!is.null(imputeData)) {
     imputeData2 <- imputeAttributes(y = y,
                                     attributeNames = attributeNames,
-                                    imputeData = imputeData)
+                                    imputeData = imputeData,
+                                    miceIt = miceIt)
     for (i in attributeNames) {
       if (is.factor(imputeData2[,i])) {
         imputeData2[,i] <- as.character(imputeData2[,i])
@@ -406,7 +407,8 @@ bergmM <- function(formula,
         if (!is.null(imputeData)) {
           imputeData2 <- imputeAttributes(y = impNet,
                                           attributeNames = attributeNames,
-                                          imputeData = imputeData)
+                                          imputeData = imputeData,
+                                          miceIt = miceIt)
           for (i in attributeNames) {
             if (is.factor(imputeData2[,i])) {
               imputeData2[,i] <- as.character(imputeData2[,i])
@@ -515,7 +517,7 @@ bergmM <- function(formula,
 
 
 
-imputeAttributes <- function(y, attributeNames, imputeData) {
+imputeAttributes <- function(y, attributeNames, imputeData, miceIt) {
   imputeData2 <- imputeData
   y2n <- as.matrix.network(y)
   
