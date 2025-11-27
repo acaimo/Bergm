@@ -29,6 +29,7 @@ bergmM(
   imputeData = NULL,
   attributeNames = NULL,
   miceIt = 5,
+  suppressMice = TRUE,
   onlyKeepImputation = FALSE,
   ...
 )
@@ -102,19 +103,25 @@ By default equal to twice the number of missing ties.
 Smaller numbers increase speed. Larger numbers lead to better sampling.}
 
 \item{imputeData}{data.frame;
-a data.frame with all attribute variables that should be imputed and additional attributes that should be used for the imputation.
+a data.frame with all attribute variables that should be imputed and 
+additional attributes that should be used for the imputation.
 All non-numeric variables need to be specified as.factors.
 Names of vertex.attributes and variable names need to be identical.}
 
 \item{attributeNames}{character vector,
 a vector with the names of all variables that need to be imputed.
-These names need to be identical with the vertex.attributes and must be part of the names of the \code{imputeData} data.frame.}
+These names need to be identical with the vertex.attributes and must be part 
+of the names of the \code{imputeData} data.frame.}
 
 \item{miceIt}{count,
 number of iterations in the MICE imputation. Default is 5.}
 
+\item{suppressMice}{logical,
+shall \code{mice()} warnings be suppressed. By default TRUE.}
+
 \item{onlyKeepImputation}{logical,
-Should only imputations be returned, and no bergm estimate (only recommended after you made sure that the model estimates properly).}
+Should only imputations be returned, and no bergm estimate (only recommended 
+after you made sure that the model estimates properly).}
 
 \item{...}{additional arguments, to be passed to lower-level functions.}
 }

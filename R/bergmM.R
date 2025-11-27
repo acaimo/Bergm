@@ -71,19 +71,25 @@
 #' Smaller numbers increase speed. Larger numbers lead to better sampling.
 #'
 #' @param imputeData data.frame;
-#' a data.frame with all attribute variables that should be imputed and additional attributes that should be used for the imputation.
+#' a data.frame with all attribute variables that should be imputed and 
+#' additional attributes that should be used for the imputation.
 #' All non-numeric variables need to be specified as.factors.
 #' Names of vertex.attributes and variable names need to be identical.
 #'
 #' @param attributeNames character vector,
 #' a vector with the names of all variables that need to be imputed.
-#' These names need to be identical with the vertex.attributes and must be part of the names of the \code{imputeData} data.frame.
+#' These names need to be identical with the vertex.attributes and must be part 
+#' of the names of the \code{imputeData} data.frame.
 #'
 #' @param miceIt count,
 #' number of iterations in the MICE imputation. Default is 5.
 #'
+#' @param suppressMice logical,
+#' shall \code{mice()} warnings be suppressed. By default TRUE.
+#'
 #' @param onlyKeepImputation logical,
-#' Should only imputations be returned, and no bergm estimate (only recommended after you made sure that the model estimates properly).
+#' Should only imputations be returned, and no bergm estimate (only recommended 
+#' after you made sure that the model estimates properly).
 #'
 #' @param ... additional arguments, to be passed to lower-level functions.
 #'
@@ -151,6 +157,7 @@ bergmM <- function(formula,
                    imputeData = NULL,
                    attributeNames = NULL,
                    miceIt = 5,
+                   suppressMice = TRUE,
                    onlyKeepImputation = FALSE,
                    ...) {
   
@@ -159,13 +166,14 @@ bergmM <- function(formula,
   } else {
     set.seed(seed)
   }
-  y <- ergm.getnetwork(formula)
+  y <- ergm::ergm.getnetwork(formula)
   
   if (!is.null(imputeData)) {
     imputeData2 <- imputeAttributes(y = y,
                                     attributeNames = attributeNames,
                                     imputeData = imputeData,
-                                    miceIt = miceIt)
+                                    miceIt = miceIt,
+                                    suppressMice = suppressMice)
     for (i in attributeNames) {
       if (is.factor(imputeData2[,i])) {
         imputeData2[,i] <- as.character(imputeData2[,i])
@@ -224,8 +232,14 @@ bergmM <- function(formula,
   f <- as.character(formula)
   currentFormula <- formula(paste("impNet", f[3:length(f)], sep = " ~ "))
   
-  if (is.null(constraints)) {
+  
+  if (!is.null(constraints)) {
+    impConstraints <- as.formula(stringr::str_c("~ fixallbut(missingTies)",
+                                                as.character(constraints)[2],
+                                                sep = ' + '))
+  } else {
     constraints <- ~.
+    impConstraints <- ~fixallbut(missingTies)
   }
   
   y0 <- simulate(currentFormula,
@@ -238,8 +252,7 @@ bergmM <- function(formula,
   
   control <- control.ergm(MCMC.burnin = aux.iters,
                           MCMC.interval = 1,
-                          MCMC.samplesize = 1,
-                          ...)
+                          MCMC.samplesize = 1)
   
   if (!is.null(control$init)) {
     if (length(control$init) != length(model$etamap$offsettheta)) {
@@ -318,13 +331,26 @@ bergmM <- function(formula,
     offset.coef <- offset.coeffs
   }
   
-  if (!is.null(startVals)) {
+  if (is.matrix(startVals)) {
     theta <- matrix(startVals + runif(dim * nchains, min = -0.1,
                                       max = 0.1), dim, nchains)
+  } else if (length(startVals) == dim) {
+    theta <- matrix(startVals, dim, nchains) + runif(dim * nchains, 
+                                                     min = -0.1,
+                                                     max = 0.1)
   } else {
+    if (!is.null(startVals)) {
+      cat('\nNo usable starting value provided.',
+          '\nEither provide a vector of length: ',format(dim),
+          '\n\tthe number of parameters',
+          '\nor a matrix with the dimensions: ', format(c(dim, nchains)),
+          '\n\tnumber of parameters by number of chains',
+          '\nWill use default starting values +/-0.1 around 0 instead.')
+    }
     theta <- matrix(mple + runif(dim * nchains, min = -0.1,
                                  max = 0.1), dim, nchains)
   }
+  
   
   theta[model$etamap$offsettheta, ] <- offset.coef
   
@@ -333,14 +359,7 @@ bergmM <- function(formula,
   tot.iters <- burn.in + main.iters
   lastPar <- NULL
   
-  if (!is.null(constraints)) {
-    impConstraints <- as.formula(str_c("~ fixallbut(missingTies)",
-                                       str_split(constraints,
-                                                 pattern = '~')[[2]][1],
-                                       sep = ' + '))
-  } else {
-    impConstraints <- constraints
-  }
+  
   clock.start <- Sys.time()
   message(" > MCMC start")
   for (k in 1:tot.iters) {
@@ -408,7 +427,8 @@ bergmM <- function(formula,
           imputeData2 <- imputeAttributes(y = impNet,
                                           attributeNames = attributeNames,
                                           imputeData = imputeData,
-                                          miceIt = miceIt)
+                                          miceIt = miceIt,
+                                          suppressMice = suppressMice)
           for (i in attributeNames) {
             if (is.factor(imputeData2[,i])) {
               imputeData2[,i] <- as.character(imputeData2[,i])
@@ -517,9 +537,16 @@ bergmM <- function(formula,
 
 
 
-imputeAttributes <- function(y, attributeNames, imputeData, miceIt) {
+imputeAttributes <- function(y, attributeNames, imputeData,
+                             miceIt, suppressMice) {
   imputeData2 <- imputeData
   y2n <- as.matrix.network(y)
+  
+  for (vari in seq_along(imputeData2)) {
+    if (is.character(imputeData2[[vari]])) {
+      imputeData2[[vari]] <- as.factor(imputeData2[[vari]])
+    }
+  }
   
   if (y$gal$directed) {
     imputeData2$indegreeImp <- colSums(y2n, na.rm = TRUE)
@@ -596,7 +623,7 @@ imputeAttributes <- function(y, attributeNames, imputeData, miceIt) {
       
       for (j in 1:nrow(y2n)) {
         inMax <- c(inMax, ifelse(is.null(names(which.max(table(
-            imputeData[,attributeNames[i]][as.logical(y2n[,j])])))),
+          imputeData[,attributeNames[i]][as.logical(y2n[,j])])))),
           yes = NA,
           no = names(which.max(table(
             imputeData[,attributeNames[i]][as.logical(y2n[,j])])))))
@@ -608,11 +635,21 @@ imputeAttributes <- function(y, attributeNames, imputeData, miceIt) {
                              sep = ''))
     imputeData2 <- cbind(imputeData2,impMat)
   }
-  imputeData2 <- mice::complete(mice::mice(imputeData2,
-                                           m = 1,
-                                           printFlag = FALSE,
-                                           maxit = miceIt,
-                                           remove_collinear = FALSE))
+  if (suppressMice) {
+    imputeData2 <- suppressWarnings(mice::complete(
+      mice::mice(imputeData2,
+                 m = 1,
+                 printFlag = FALSE,
+                 maxit = miceIt,
+                 remove_collinear = FALSE)))
+  } else {
+    imputeData2 <- mice::complete(mice::mice(imputeData2,
+                                             m = 1,
+                                             printFlag = FALSE,
+                                             maxit = miceIt,
+                                             remove_collinear = FALSE))
+  }
+  
   imputeData2 <- imputeData2[,names(imputeData2) %in% names(imputeData)]
   return(imputeData2)
 }
