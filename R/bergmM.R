@@ -252,7 +252,8 @@ bergmM <- function(formula,
   
   control <- control.ergm(MCMC.burnin = aux.iters,
                           MCMC.interval = 1,
-                          MCMC.samplesize = 1)
+                          MCMC.samplesize = 1,
+                         term.options(interact.dependent = 'silent'))
   
   if (!is.null(control$init)) {
     if (length(control$init) != length(model$etamap$offsettheta)) {
