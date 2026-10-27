@@ -51,7 +51,7 @@ source repository).
 ```r
 library(Bergm)
 
-# Curved ERGM, delayed acceptance (default) and 4 workers
+# Curved ERGM, delayed acceptance (default)
 data(lazega)
 
 fit <- bergm(lazega ~ edges + nodematch("Office") + gwesp(0.5, fixed = FALSE),
