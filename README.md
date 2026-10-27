@@ -50,7 +50,6 @@ source repository).
 
 ```r
 library(Bergm)
-data(florentine)
 
 # Curved ERGM, delayed acceptance (default) and 4 workers
 data(lazega)
@@ -63,6 +62,7 @@ fit <- bergm(lazega ~ edges + nodematch("Office") + gwesp(0.5, fixed = FALSE),
 bgof(fit, sample.size = 100, aux.iters = 5000)
 nets <- simulate(fit, nsim = 10)
 
+data(florentine)
 # Model selection
 a1 <- ergmAPL(flomarriage ~ edges + kstar(2))
 a2 <- ergmAPL(flomarriage ~ edges + triangle)
