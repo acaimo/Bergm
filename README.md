@@ -54,7 +54,7 @@ library(Bergm)
 # Curved ERGM, delayed acceptance (default)
 data(lazega)
 
-fit <- bergm(lazega ~ edges + nodematch("Office") + gwesp(0.5, fixed = FALSE),
+fit <- bergm(lazega ~ edges + nodematch("Office") + gwesp(fixed = FALSE),
               burn.in = 200, main.iters = 2000, aux.iters = 3000,
               seed = 1)
 
