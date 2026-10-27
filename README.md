@@ -55,19 +55,19 @@ data(florentine)
 # Curved ERGM, delayed acceptance (default) and 4 workers
 data(lazega)
 
-fit2 <- bergm(lazega ~ edges + nodematch("Office") + gwesp(0.5, fixed = FALSE),
+fit <- bergm(lazega ~ edges + nodematch("Office") + gwesp(0.5, fixed = FALSE),
               burn.in = 200, main.iters = 2000, aux.iters = 3000,
-              cores = 4, seed = 1)
+              seed = 1)
+
+# Goodness of fit and posterior predictive networks
+bgof(fit, sample.size = 100, aux.iters = 5000)
+nets <- simulate(fit, nsim = 10)
 
 # Model selection
 a1 <- ergmAPL(flomarriage ~ edges + kstar(2))
 a2 <- ergmAPL(flomarriage ~ edges + triangle)
 evidencePP(flomarriage ~ edges + kstar(2), apl = a1)$log.evidence -
   evidencePP(flomarriage ~ edges + triangle, apl = a2)$log.evidence
-
-# Goodness of fit and posterior predictive networks
-bgof(fit, sample.size = 100, aux.iters = 5000)
-nets <- simulate(fit, nsim = 10)
 ```
 
 ### How to cite **Bergm**
