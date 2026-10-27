@@ -20,9 +20,9 @@ bergmM(
   constraints = NULL,
   thin = 1,
   saveEveryX = NULL,
-  cut.reject = TRUE,
+  cut.reject = FALSE,
   saveEveryXName = "partialBergmEstimate.rda",
-  imputeAllItr = FALSE,
+  imputeAllItr = TRUE,
   imputeLast = TRUE,
   nImp = NULL,
   missingUpdate = NULL,
@@ -30,6 +30,11 @@ bergmM(
   attributeNames = NULL,
   miceIt = 5,
   onlyKeepImputation = FALSE,
+  adapt = TRUE,
+  target.accept = 0.25,
+  log.prior = NULL,
+  prior.decay = c(meanlog = log(0.5), sdlog = 0.75),
+  verbose = TRUE,
   ...
 )
 }
@@ -46,81 +51,97 @@ and <model terms> are \code{ergm-terms}.}
 \item{aux.iters}{count; number of auxiliary iterations used for network simulation.}
 
 \item{prior.mean}{vector; mean vector of the multivariate Normal prior.
-By default set to a vector of 0's. Note that several ergm.terms add more than one parameter to the model. You need to adjust your priors accordingly}
+By default set to a vector of 0's.}
 
-\item{prior.sigma}{square matrix; variance/covariance matrix for the multivariate Normal prior.
-By default set to a diagonal matrix with every diagonal entry equal to 100. Note that several ergm.terms add more than one parameter to the model. You need to adjust your priors accordingly}
+\item{prior.sigma}{square matrix (or scalar/vector diagonal); variance/covariance matrix for the multivariate Normal prior.
+By default set to a diagonal matrix with every diagonal entry equal to 100.}
 
 \item{nchains}{count; number of chains of the population MCMC.
-By default set to twice the model dimension (number of model terms).}
+By default twice the number of free model parameters (at least 4).}
 
-\item{gamma}{scalar; parallel adaptive direction sampling move factor.}
+\item{gamma}{scalar; parallel adaptive direction sampling move factor
+(starting value when \code{adapt = TRUE}).}
 
 \item{V.proposal}{count; diagonal entry for the multivariate Normal proposal.
 By default set to 0.0025.}
 
-\item{seed}{count;
-random number seed for the Bergm estimation.}
+\item{seed}{count; random number seed for the Bergm estimation.}
 
-\item{startVals}{vector;
-optional starting values for the parameter estimation.}
+\item{startVals}{vector; optional starting values for the parameter estimation.}
 
-\item{offset.coef}{vector;
-a vector of coefficients for the offset terms.}
+\item{offset.coef}{vector; a vector of coefficients for the offset terms.}
 
-\item{constraints}{formula;
-A formula specifying one or more constraints on the support of the distribution of the networks being modeled, using syntax similar to the formula argument, on the right-hand side. Multiple constraints may be given, separated by “+” and “-” operators. (See \code{\link[ergm]{ergm}} constraints for the explanation of their semantics.) Together with the model terms in the formula and the reference measure, the constraints define the distribution of networks being modeled.}
+\item{constraints}{formula; constraints on the support of the network
+distribution, as in \code{\link[ergm]{ergm}}.}
 
-\item{thin}{count;
-The thinning interval between consecutive observations.}
+\item{thin}{count; the thinning interval between consecutive observations.}
 
-\item{saveEveryX}{count; If not NULL, the posterior and obtained imputation (only if nImp > 0) will be saved to your working directory at every X iterations.
-Note that this slows down estimation and thus X should not be set too low. By default, the saved data will be in 'partialBergmEstimate.rda' and will be overwritten every X iterations and by other calls of bergm() or bergmM().}
+\item{saveEveryX}{count; if not \code{NULL}, the partial posterior sample and imputations
+are saved to \code{saveEveryXName} every \code{saveEveryX} iterations.}
 
-\item{cut.reject}{logical;
-default TRUE. By default bergm()/bergmM() will save the last accepted theta to the posterior if the new proposal is rejected.
-This artificially will increase the auto-correlation of consecutive parameters.}
+\item{cut.reject}{logical; if \code{TRUE}, repeated (rejected) draws are removed from
+the pooled sample (backward compatibility only; default \code{FALSE}).}
 
-\item{saveEveryXName}{character; the Name of the partial estimation object.
-If you run multiple bergm()/bergmM() calls in the same working directory you should change this name so that the calls do not override each other.}
+\item{saveEveryXName}{character; the name of the partial estimation object.}
 
-\item{imputeAllItr}{logical;
-default FALSE. If TRUE, missing network and attribute data are imputed after every iteration.
-This leads to much (!!!) longer estimation times, but potentially overall better estimation.
-It is recommended to initially estimate with imputeAllItr = FALSE to get reasonable starting values and reduce overall estimation time.}
+\item{imputeAllItr}{logical; default \code{TRUE}: missing data are imputed for every
+chain at every iteration (exact data augmentation). If \code{FALSE}, a chain's
+imputation is only refreshed after an accepted move, as in Bergm 5.}
 
-\item{imputeLast}{logical;
-default TRUE and in line with Koskinen et al. 2010.
-If FALSE, network imputations will be performed with a random draw from the so far accepted parameter values.}
+\item{imputeLast}{logical; kept for backward compatibility. Imputations always use the
+chain's current parameter value, which is what makes the sampler valid.}
 
-\item{nImp}{count;
-number of imputed networks to be returned. If null, no imputed network will be returned.}
+\item{nImp}{count; number of imputed networks to be returned. If \code{NULL}, no imputed
+network is returned. Imputations are taken at evenly spaced post burn-in
+iterations, cycling through the chains.}
 
-\item{missingUpdate}{count;
-number of tie updates in each imputation step.
-By default equal to the number of missing ties.
-Smaller numbers increase speed. Larger numbers lead to better sampling.}
+\item{missingUpdate}{count; number of tie updates in each imputation step.
+By default equal to the number of missing ties.}
 
-\item{imputeData}{data.frame;
-a data.frame with all attribute variables that should be imputed and additional attributes that should be used for the imputation.
-All non-numeric variables need to be specified as.factors.
-Names of vertex.attributes and variable names need to be identical.}
+\item{imputeData}{data.frame; a data.frame with all attribute variables that should be
+imputed and additional attributes that should be used for the imputation.
+All non-numeric variables need to be specified as factors.
+Names of vertex attributes and variable names need to be identical.}
 
-\item{attributeNames}{character vector,
-a vector with the names of all variables that need to be imputed.
-These names need to be identical with the vertex.attributes and must be part of the names of the \code{imputeData} data.frame.}
+\item{attributeNames}{character vector; the names of all variables that need to be imputed.}
 
-\item{miceIt}{count,
-number of iterations in the MICE imputation. Default is 5.}
+\item{miceIt}{count; number of iterations in the MICE imputation. Default is 5.}
 
-\item{onlyKeepImputation}{logical,
-Should only imputations be returned, and no bergm estimate (only recommended after you made sure that the model estimates properly).}
+\item{onlyKeepImputation}{logical; should only imputations be returned, and no bergm estimate.}
 
-\item{...}{additional arguments, to be passed to lower-level functions.}
+\item{adapt}{logical; tune \code{gamma} during burn-in (see \code{\link{bergm}}).}
+
+\item{target.accept}{scalar; target acceptance rate for \code{adapt}.}
+
+\item{log.prior}{function; optional user-defined log prior (see \code{\link{bergm}}).}
+
+\item{prior.decay}{named vector or list with elements \code{meanlog} and
+\code{sdlog}; log-normal prior for the decay parameters of curved terms
+(e.g. \code{gwesp.decay}, \code{gwdegree.decay}, \code{altkstar.lambda}),
+recycled over all of them or given one value per decay parameter. Default:
+median 0.5, \code{sdlog} 0.75. Decay parameters are sampled on the log
+scale, so they are always positive; \code{prior.mean} and
+\code{prior.sigma} apply to the other parameters and may be given either
+for all parameters (decay entries are ignored) or for the non-decay ones only.}
+
+\item{verbose}{logical; print progress information.}
+
+\item{...}{additional arguments passed to \code{\link[ergm]{control.simulate.formula}}.}
 }
 \description{
 Function to fit Bayesian exponential random graphs models under missing data
-using the approximate exchange algorithm.
+using the approximate exchange algorithm with Bayesian data augmentation
+(Koskinen, Robins and Pattison, 2010).
+}
+\details{
+Every chain of the population carries its own imputed network, and
+missing tie variables are updated by a Gibbs-type step from the ERGM
+restricted to the missing dyads given the chain's current parameter.
+This is a valid data-augmentation sampler for each chain (in Bergm 5 a
+single imputed network was shared by all chains). Imputation steps act
+directly on \pkg{ergm}'s compiled network states, which makes imputing at
+every iteration cheap; network objects are only built for the returned
+imputations.
 }
 \examples{
 \dontrun{
@@ -149,9 +170,6 @@ summary(m.flo)
 \references{
 Caimo, A. and Friel, N. (2011), "Bayesian Inference for Exponential Random Graph Models,"
 Social Networks, 33(1), 41-55. \url{https://arxiv.org/abs/1007.5192}
-
-Caimo, A. and Friel, N. (2014), "Bergm: Bayesian Exponential Random Graphs in R,"
-Journal of Statistical Software, 61(2), 1-25. \url{https://www.jstatsoft.org/v61/i02}
 
 Koskinen, J.H., Robins, G.L., and Pattison, P.E. (2010), "Analysing exponential
 random graph (p-star) models with missing data using Bayesian data augmentation,"

@@ -13,51 +13,73 @@ bgof(
   n.esp = NULL,
   n.ideg = NULL,
   n.odeg = NULL,
+  plot = TRUE,
+  cores = 1,
+  seed = NULL,
   ...
 )
 }
 \arguments{
 \item{x}{an \code{R} object of class \code{bergm}.}
 
-\item{sample.size}{count; number of networks 
+\item{sample.size}{count; number of networks
 to be simulated and compared to the observed network.}
 
 \item{aux.iters}{count; number of iterations used for network simulation.}
 
-\item{n.deg}{count; used to plot only the first 
-\code{n.deg}-1 degree distributions. 
-By default no restrictions on the number of degree 
+\item{n.deg}{count; used to plot only the first
+\code{n.deg}-1 degree distributions.
+By default no restrictions on the number of degree
 distributions is applied.}
 
-\item{n.dist}{count; used to plot only the first 
-\code{n.dist}-1 geodesic distances distributions. 
-By default no restrictions on the number of geodesic 
+\item{n.dist}{count; used to plot only the first
+\code{n.dist}-1 geodesic distances distributions.
+By default no restrictions on the number of geodesic
 distances distributions is applied.}
 
-\item{n.esp}{count; used to plot only the first 
-\code{n.esp}-1 edge-wise shared partner distributions. 
-By default no restrictions on the number of 
+\item{n.esp}{count; used to plot only the first
+\code{n.esp}-1 edge-wise shared partner distributions.
+By default no restrictions on the number of
 edge-wise shared partner distributions is applied.}
 
-\item{n.ideg}{count; used to plot only the first 
-\code{n.ideg}-1 in-degree distributions. 
-By default no restrictions on the number of 
+\item{n.ideg}{count; used to plot only the first
+\code{n.ideg}-1 in-degree distributions.
+By default no restrictions on the number of
 in-degree distributions is applied.}
 
-\item{n.odeg}{count; used to plot only the first 
-\code{n.odeg}-1 out-degree distributions. 
-By default no restrictions on the number of 
+\item{n.odeg}{count; used to plot only the first
+\code{n.odeg}-1 out-degree distributions.
+By default no restrictions on the number of
 out-degree distributions is applied.}
 
-\item{...}{additional arguments, 
-to be passed to lower-level functions.}
+\item{plot}{logical; draw the diagnostic plots (default \code{TRUE}).}
+
+\item{cores}{count; number of parallel workers.}
+
+\item{seed}{integer; optional seed.}
+
+\item{...}{additional arguments, passed to \code{\link{plot.bgof}}.}
+}
+\value{
+An object of class \code{bgof} (returned invisibly when plotted):
+simulated (\code{sim.*}) and observed (\code{obs.*}) proportions for each
+goodness-of-fit statistic, plus \code{sim.model}/\code{obs.model} and
+posterior predictive p-values (\code{pval.model}) for the model statistics.
 }
 \description{
-Function to calculate summaries for degree, 
-minimum geodesic distances, 
-and edge-wise shared partner distributions 
-to diagnose the Bayesian goodness-of-fit of 
+Function to calculate summaries for degree,
+minimum geodesic distances,
+and edge-wise shared partner distributions
+to diagnose the Bayesian goodness-of-fit of
 exponential random graph models.
+}
+\details{
+For every sampled posterior parameter one network is simulated from the
+model, starting from the observed network. The goodness-of-fit statistics
+are monitored inside \pkg{ergm}'s compiled sampler (as additional
+zero-coefficient model terms), so no network objects are created and the
+posterior predictive distribution of the model statistics is obtained at
+no extra cost. Simulations can run in parallel with \code{cores > 1}.
 }
 \examples{
 \dontrun{
@@ -81,9 +103,9 @@ bgof(p.flo,
 }
 }
 \references{
-Caimo, A. and Friel, N. (2011), "Bayesian Inference for Exponential Random Graph Models," 
+Caimo, A. and Friel, N. (2011), "Bayesian Inference for Exponential Random Graph Models,"
 Social Networks, 33(1), 41-55. \url{https://arxiv.org/abs/1007.5192}
 
-Caimo, A. and Friel, N. (2014), "Bergm: Bayesian Exponential Random Graphs in R," 
-Journal of Statistical Software, 61(2), 1-25. \url{https://www.jstatsoft.org/v61/i02}
+Caimo, A. and Friel, N. (2014), "Bergm: Bayesian Exponential Random Graphs in R,"
+Journal of Statistical Software, 61(2), 1-25. \doi{10.18637/jss.v061.i02}
 }

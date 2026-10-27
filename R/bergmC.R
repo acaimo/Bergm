@@ -1,9 +1,18 @@
 #' Calibrating misspecified Bayesian ERGMs
 #'
-#' Function to transform a sample from the pseudo-posterior 
-#' to one that is approximately sampled from the intractable 
-#' posterior distribution.
-#' 
+#' Function to transform a sample from the pseudo-posterior
+#' to one that is approximately sampled from the intractable
+#' posterior distribution (Bouranis, Friel and Maire, 2017).
+#'
+#' The pseudo-posterior is sampled by a compiled random-walk Metropolis kernel.
+#' The mode of the true posterior, which anchors the calibration, is found by
+#' default with a Newton-type stochastic approximation that uses the
+#' simulated covariance of the sufficient statistics and a persistent
+#' auxiliary network chain (\code{map.method = "newton"}); this typically
+#' converges in about ten iterations, whereas the Robbins-Monro recursion of
+#' previous versions (\code{map.method = "rm"}) needs hundreds. The
+#' pseudo-posterior mode is found exactly by Newton-Raphson.
+#'
 #' @param formula formula; an \code{\link[ergm]{ergm}} formula object,
 #' of the form  <network> ~ <model terms>
 #' where <network> is a \code{\link[network]{network}} object
@@ -12,46 +21,63 @@
 #' @param prior.mean vector; mean vector of the multivariate Normal prior.
 #' By default set to a vector of 0's.
 #'
-#' @param prior.sigma square matrix; variance/covariance matrix for the multivariate Normal prior.
+#' @param prior.sigma square matrix (or scalar/vector diagonal); variance/covariance
+#' matrix for the multivariate Normal prior.
 #' By default set to a diagonal matrix with every diagonal entry equal to 100.
 #'
 #' @param burn.in count; number of burn-in iterations at the beginning of an MCMC run for the pseudo-posterior estimation.
 #'
 #' @param main.iters count; number of MCMC iterations after burn-in for the pseudo-posterior estimation.
 #'
-#' @param aux.iters count; number of auxiliary iterations used for drawing the first network from the ERGM likelihood (Robbins-Monro). See \code{\link[ergm]{control.simulate.formula}}.
+#' @param aux.iters count; number of auxiliary iterations used for drawing the first network from the ERGM likelihood.
 #'
 #' @param V.proposal count; diagonal entry for the multivariate Normal proposal.
 #' By default set to 1.5.
 #'
-#' @param thin count; thinning interval used in the simulation for the pseudo-posterior estimation. The number of MCMC iterations must be divisible by this value.
+#' @param thin count; thinning interval used in the simulation for the pseudo-posterior estimation.
 #'
-#' @param rm.iters count; number of iterations for the Robbins-Monro stochastic approximation algorithm.
-#' 
+#' @param rm.iters count; number of iterations for the Robbins-Monro algorithm (\code{map.method = "rm"}).
+#'
 #' @param rm.a scalar; constant for sequence alpha_n (Robbins-Monro).
-#' 
+#'
 #' @param rm.alpha scalar; noise added to gradient (Robbins-Monro).
-#' 
-#' @param n.aux.draws count; number of auxiliary networks drawn from the ERGM likelihood (Robbins-Monro). See \code{\link[ergm]{control.simulate.formula}}.
-#' 
-#' @param aux.thin count; number of auxiliary iterations between network draws after the first network is drawn (Robbins-Monro). See \code{\link[ergm]{control.simulate.formula}}.
-#' 
-#' @param estimate If "MLE" (the default), then an approximate maximum likelihood estimator is used as a starting point in the Robbins-Monro algorithm. If "CD" , the Monte-Carlo contrastive divergence estimate is returned. See \code{\link[ergm]{ergm}}.
-#' 
+#'
+#' @param n.aux.draws count; number of auxiliary networks drawn from the ERGM likelihood at every
+#' stochastic approximation iteration and for the curvature adjustment.
+#'
+#' @param aux.thin count; number of auxiliary iterations between network draws after the first network is drawn.
+#'
+#' @param estimate If "MLE" (the default), then an approximate maximum likelihood estimator is used as a starting point
+#' for the posterior mode search. If "CD", the Monte-Carlo contrastive divergence estimate is used. See \code{\link[ergm]{ergm}}.
+#'
 #' @param seed integer; seed for the random number generator. See \code{set.seed}.
-#' 
+#'
+#' @param map.method character; \code{"newton"} (default) or \code{"rm"} (Robbins-Monro, as in Bergm 5).
+#'
+#' @param map.iters count; number of Newton stochastic approximation iterations.
+#'
+#' @param init vector; optional starting value for the posterior mode search. If given,
+#' the \code{\link[ergm]{ergm}} fit is skipped.
+#'
+#' @param verbose logical; print progress information.
+#'
 #' @param ... Additional arguments, to be passed to the ergm function. See \code{\link[ergm]{ergm}}.
-#' 
-#' @references 
-#' Bouranis, L., Friel, N., & Maire, F. (2017). Efficient Bayesian inference for exponential 
-#' random graph models by correcting the pseudo-posterior distribution. 
+#'
+#' @return An object of class \code{bergm}, with additional elements
+#' \code{Theta_star} (estimated posterior mode), \code{Theta_PL}
+#' (pseudo-posterior mode), \code{W} (curvature adjustment matrix) and
+#' \code{map.trajectory}.
+#'
+#' @references
+#' Bouranis, L., Friel, N., & Maire, F. (2017). Efficient Bayesian inference for exponential
+#' random graph models by correcting the pseudo-posterior distribution.
 #' Social Networks, 50, 98-108. \url{https://arxiv.org/abs/1510.00934}
 #'
 #' @examples
 #' \dontrun{
 #' # Load the florentine marriage network
 #' data(florentine)
-#'                                  
+#'
 #' # Calibrated pseudo-posterior:
 #' cpp.flo <- bergmC(flomarriage ~ edges + kstar(2),
 #'                   aux.iters  = 500,
@@ -64,234 +90,94 @@
 #'}
 #'
 #' @export
-#'
-bergmC <- function(formula, 
+bergmC <- function(formula,
                    prior.mean  = NULL,
                    prior.sigma = NULL,
-                   burn.in     = 1e04, 
+                   burn.in     = 1e04,
                    main.iters  = 4e04,
                    aux.iters   = 3000,
                    V.proposal  = 1.5,
                    thin        = 1,
-                   rm.iters    = 500,            
-                   rm.a        = 0.001,                
-                   rm.alpha    = 0,        
-                   n.aux.draws = 400,  
+                   rm.iters    = 500,
+                   rm.a        = 0.001,
+                   rm.alpha    = 0,
+                   n.aux.draws = 400,
                    aux.thin    = 50,
-                   estimate    = c("MLE","CD"),
+                   estimate    = c("MLE", "CD"),
                    seed        = 1,
-                   ...){
-  
-  y     <- ergm.getnetwork(formula)
-  model <- ergm_model(formula, y)
-  specs <- unlist(sapply(model$terms, '[', 'coef.names'), use.names = FALSE)
-  sy    <- summary(formula)    
-  dim   <- length(sy)
-  
-  if (is.null(prior.mean))  prior.mean  <- rep(0, dim)
-  if (is.null(prior.sigma)) prior.sigma <- diag(100, dim, dim)
-  
-  control <- control.ergm(MCMC.burnin     = aux.iters,
-                          MCMC.interval   = aux.thin,
-                          MCMC.samplesize = n.aux.draws,
-                          seed            = seed)
-  
+                   map.method  = c("newton", "rm"),
+                   map.iters   = 20,
+                   init        = NULL,
+                   verbose     = TRUE,
+                   ...) {
+  clock.start <- Sys.time()
   estimate <- match.arg(estimate)
-  
-  logpp_short <- function(theta,
-                          Y,
-                          X,
-                          weights,
-                          prior.mean,   
-                          prior.sigma,
-                          optimPL){
-    xtheta    <- c(X %*% theta)
-    log.like  <- sum(dbinom(weights * Y, weights, exp(xtheta) / (1 + exp(xtheta)), log = TRUE))
-    log.prior <- dmvnorm(theta, mean = prior.mean, prior.sigma, log = TRUE) 
-    if (optimPL == FALSE) out <- log.like + log.prior else out <- -(log.like + log.prior)
-    return(out)
-  }
-  
-  score_logPP <- function(theta,          
-                          Y,
-                          X,
-                          weights,
-                          prior.mean,
-                          prior.sigma,
-                          optimPL){
-    
-    score.log.prior <- -solve(prior.sigma, (theta - prior.mean))
-    p               <- c( exp(as.matrix(X) %*% theta ) / ( 1 + exp(as.matrix(X) %*% theta) ) )
-    deriv.logpl     <- c( t(X) %*% (weights*(Y - p)) )
-    if (optimPL == TRUE) out <- deriv.logpl + score.log.prior
-    return(out)
-  }
-  
-  rm_ergm <- function(formula,
-                      prior.mean,      
-                      prior.sigma,
-                      y,
-                      model,
-                      sy,
-                      dim,
-                      control,
-                      rm.iters,            
-                      rm.a,                 
-                      rm.alpha,          
-                      init,            
-                      aux.iters, 
-                      n.aux.draws, 
-                      aux.thin){     
-    
-    theta <- array(0, c(dim = rm.iters, dim))  
-    theta[1, ] <- init
-    
-    for (i in 2:rm.iters) {
-      
-      y0 <- simulate(formula, 
-                     coef        = theta[i - 1,], 
-                     nsim        = 1,
-                     control     = control.simulate(MCMC.burnin   = 1,
-                                                    MCMC.interval = 1),
-                     return.args = "ergm_state")$object
-      
-      z <- as.matrix( ergm_MCMC_sample(y0,
-                                       theta   = theta[i - 1,],
-                                       stats0  = sy,
-                                       control = control)$stats[[1]] )
-      z <- sweep(z, 2, sy, '-')
+  map.method <- match.arg(map.method)
+  .with_seed(seed)
 
-      estgrad <- -apply(z, 2, mean) - solve(prior.sigma, (theta[i - 1,] - prior.mean))
-      theta[i, ] <- theta[i - 1, ]  + ((rm.a/i) * (rm.alpha + estgrad))
-    }
-    out <- list(Theta = theta) 
-    return(out)
-  }
-  
-  mplesetup <- ergmMPLE(formula)
-  data.glm.initial <- cbind(mplesetup$response, 
-                            mplesetup$weights, 
-                            mplesetup$predictor)
-  colnames(data.glm.initial) <- c("responses", 
-                                  "weights", 
-                                  colnames(mplesetup$predictor))
-  
-  Vcov.MPLE <- vcov(glm(mplesetup$response ~. - 1, 
-                        data    = data.frame(mplesetup$predictor), 
-                        weights = mplesetup$weights, 
-                        family  = "binomial"))
-  
-  Sigma.proposal <- diag(rep(V.proposal, dim), dim, dim)
-  S.prop <- Sigma.proposal %*% solve((solve(prior.sigma) + solve(Vcov.MPLE))) %*% Sigma.proposal 
-  
-  suppressMessages(mple <- ergm(formula, estimate = "MPLE", verbose = FALSE) )
-  
-  message(" > MCMC start")
-  clock.start <- Sys.time() 
-  
-  capture.output(unadj.sample <- MCMCmetrop1R(logpp_short,
-                                              theta.init  = mple$coefficients,
-                                              Y           = mplesetup$response,
-                                              X           = mplesetup$predictor,
-                                              weights     = mplesetup$weights,
-                                              optimPL     = FALSE,
-                                              prior.mean  = prior.mean,
-                                              prior.sigma = prior.sigma,
-                                              V           = S.prop,
-                                              thin        = thin, 
-                                              mcmc        = main.iters, 
-                                              burnin      = burn.in,
-                                              seed        = seed,
-                                              logfun      = TRUE
-                                              ))
-  
-  message(" > MAP estimation")
-  
-  suppressMessages(rob.mon.init <- ergm(formula, 
-                                        estimate = estimate, 
-                                        verbose = FALSE, 
-                                        control = control.ergm(seed = seed), 
-                                        ...))
-  
-  theta.star <- rm_ergm(formula, 
-                        rm.iters    = rm.iters,
-                        rm.a        = rm.a,
-                        rm.alpha    = rm.alpha,
-                        init        = rob.mon.init$coefficients,
-                        aux.iters   = aux.iters,
-                        n.aux.draws = n.aux.draws, 
-                        aux.thin    = aux.thin,  
-                        prior.mean  = prior.mean,     
-                        prior.sigma = prior.sigma,
-                        y           = y,
-                        model       = model,
-                        sy          = sy,
-                        dim         = dim,
-                        control     = control
-  )
-  
-  theta.PLstar <- optim(par         = summary(unadj.sample)$statistics[,1],
-                        fn          = logpp_short,
-                        gr          = score_logPP,
-                        lower       = rob.mon.init$coefficients - 3,
-                        upper       = rob.mon.init$coefficients + 3,
-                        Y           = mplesetup$response,
-                        X           = mplesetup$predictor,
-                        weights     = mplesetup$weights,
-                        optimPL     = TRUE,
-                        prior.mean  = prior.mean,     
-                        prior.sigma = prior.sigma,
-                        hessian     = TRUE,
-                        method      = "L-BFGS-B")
-  
-  message(" > Curvature Adjustment")
+  setup <- .ergm_setup(formula)
+  .not_supported_curved(setup, "bergmC")
+  dim <- setup$p
+  specs <- setup$coef.names
+  sy <- setup$sy
+  prior <- .gauss_prior(prior.mean, prior.sigma, dim, specs)
+  pl <- .pl_setup(formula)
 
-  y0 <- simulate(formula, 
-                 coef        = theta.star$Theta[rm.iters, ], 
-                 nsim        = 1, 
-                 control     = control.simulate(MCMC.burnin = 1,
-                                                MCMC.interval = 1),
-                 return.args = "ergm_state")$object
-  
-  z <- as.matrix( ergm_MCMC_sample(y0,
-                                   theta   = theta.star$Theta[rm.iters, ],
-                                   stats0  = sy,
-                                   control = control)$stats[[1]] )
-  
-  sim.samples <- z
-  
-  Hessian.post.truelike <- -cov(sim.samples) - solve(prior.sigma)  
-  
-  chol.true.posterior <- chol(-Hessian.post.truelike)
-  chol.PL.posterior   <- chol(-theta.PLstar$hessian) 
-  
-  W <- solve(chol.PL.posterior) %*% chol.true.posterior
+  mode_pl <- .pl_mode(pl, prior = prior)
+  if (is.null(mode_pl)) stop("Could not locate the pseudo-posterior mode.", call. = FALSE)
+  H_pl <- .pl_hess(pl, mode_pl)
+  Sigma.proposal <- .as_cov(V.proposal, dim, "V.proposal")
+  S.prop <- Sigma.proposal %*% solve(prior$prec - H_pl) %*% Sigma.proposal
+
+  if (verbose) message(" > MCMC start")
+  unadj <- .rwm_pl(pl, prior, S.prop, init = mode_pl, burn.in = burn.in,
+                   main.iters = main.iters, thin = thin)
+
+  if (verbose) message(" > MAP estimation")
+  if (is.null(init)) init <- .ergm_estimate(formula, estimate, seed, ...)
+  init[!is.finite(init)] <- 0
+  st <- ergm_state_send(setup$state)
+  map <- if (map.method == "newton") {
+    .map_newton(st, sy, init, prior, aux.iters, n.aux.draws, aux.thin, iters = map.iters)
+  } else {
+    .map_rm(st, sy, init, prior, aux.iters, n.aux.draws, aux.thin, rm.iters, rm.a, rm.alpha)
+  }
+  theta_star <- stats::setNames(map$theta, specs)
+  if (map.method == "newton" && isTRUE(map$discrepancy > 2))
+    warning("The posterior mode search did not match the observed statistics well ",
+            "(Mahalanobis discrepancy ", round(map$discrepancy, 2), "). The model may be ",
+            "near-degenerate, or 'aux.iters'/'n.aux.draws' too small.", call. = FALSE)
+
+  if (verbose) message(" > Curvature Adjustment")
+  z <- .simulate_state(map$state, theta_star, burnin = aux.iters,
+                       samplesize = n.aux.draws, interval = aux.thin)
+  chol.true.posterior <- .chol_pd(stats::cov(z$s) + prior$prec)
+  chol.PL.posterior <- .chol_pd(prior$prec - H_pl)
+  W <- backsolve(chol.PL.posterior, chol.true.posterior)
   V <- solve(W)
-  
-  corrected.sample <- t(apply(data.frame(unadj.sample), 1, 
-                              function(x) {
-                                c(V %*% (unlist(x) - theta.PLstar$par ) + 
-                                    theta.star$Theta[rm.iters, ])}))
-  
-  clock.end <- Sys.time()
-  runtime   <- difftime(clock.end, clock.start)  
-  
-  FF  <- mcmc(corrected.sample)
-  ess <- round(effectiveSize(FF), 0)
+  corrected <- sweep(sweep(unadj$draws, 2, mode_pl) %*% t(V), 2, theta_star, "+")
+  colnames(corrected) <- specs
+
+  runtime <- difftime(Sys.time(), clock.start)
+  FF <- coda::mcmc(corrected, thin = thin)
+  ess <- round(coda::effectiveSize(FF), 0)
   names(ess) <- specs
-  
-  AR <- round(1 - rejectionRate(FF)[1], 2)
-  names(AR) <- NULL
-  
-  out <- list(Theta_star = theta.star$Theta[rm.iters, ],
+  fixed <- stats::setNames(rep(FALSE, dim), specs)
+
+  out <- list(Theta_star = theta_star,
               Theta      = FF,
               Time       = runtime,
               formula    = formula,
-              AR         = AR,
+              AR         = round(unadj$accept, 2),
               ess        = ess,
               dim        = dim,
-              specs      = specs)
-  
+              specs      = specs,
+              fixed      = fixed,
+              Theta_PL   = mode_pl,
+              W          = W,
+              map.trajectory = map$trajectory,
+              prior      = list(mean = prior$mean, sigma = prior$sigma, type = "normal"),
+              constraints = setup$constraints)
   class(out) <- "bergm"
-  return(out)
+  out
 }

@@ -20,6 +20,10 @@ bergmC(
   aux.thin = 50,
   estimate = c("MLE", "CD"),
   seed = 1,
+  map.method = c("newton", "rm"),
+  map.iters = 20,
+  init = NULL,
+  verbose = TRUE,
   ...
 )
 }
@@ -32,46 +36,74 @@ and <model terms> are \code{ergm-terms}.}
 \item{prior.mean}{vector; mean vector of the multivariate Normal prior.
 By default set to a vector of 0's.}
 
-\item{prior.sigma}{square matrix; variance/covariance matrix for the multivariate Normal prior.
+\item{prior.sigma}{square matrix (or scalar/vector diagonal); variance/covariance
+matrix for the multivariate Normal prior.
 By default set to a diagonal matrix with every diagonal entry equal to 100.}
 
 \item{burn.in}{count; number of burn-in iterations at the beginning of an MCMC run for the pseudo-posterior estimation.}
 
 \item{main.iters}{count; number of MCMC iterations after burn-in for the pseudo-posterior estimation.}
 
-\item{aux.iters}{count; number of auxiliary iterations used for drawing the first network from the ERGM likelihood (Robbins-Monro). See \code{\link[ergm]{control.simulate.formula}}.}
+\item{aux.iters}{count; number of auxiliary iterations used for drawing the first network from the ERGM likelihood.}
 
 \item{V.proposal}{count; diagonal entry for the multivariate Normal proposal.
 By default set to 1.5.}
 
-\item{thin}{count; thinning interval used in the simulation for the pseudo-posterior estimation. The number of MCMC iterations must be divisible by this value.}
+\item{thin}{count; thinning interval used in the simulation for the pseudo-posterior estimation.}
 
-\item{rm.iters}{count; number of iterations for the Robbins-Monro stochastic approximation algorithm.}
+\item{rm.iters}{count; number of iterations for the Robbins-Monro algorithm (\code{map.method = "rm"}).}
 
 \item{rm.a}{scalar; constant for sequence alpha_n (Robbins-Monro).}
 
 \item{rm.alpha}{scalar; noise added to gradient (Robbins-Monro).}
 
-\item{n.aux.draws}{count; number of auxiliary networks drawn from the ERGM likelihood (Robbins-Monro). See \code{\link[ergm]{control.simulate.formula}}.}
+\item{n.aux.draws}{count; number of auxiliary networks drawn from the ERGM likelihood at every
+stochastic approximation iteration and for the curvature adjustment.}
 
-\item{aux.thin}{count; number of auxiliary iterations between network draws after the first network is drawn (Robbins-Monro). See \code{\link[ergm]{control.simulate.formula}}.}
+\item{aux.thin}{count; number of auxiliary iterations between network draws after the first network is drawn.}
 
-\item{estimate}{If "MLE" (the default), then an approximate maximum likelihood estimator is used as a starting point in the Robbins-Monro algorithm. If "CD" , the Monte-Carlo contrastive divergence estimate is returned. See \code{\link[ergm]{ergm}}.}
+\item{estimate}{If "MLE" (the default), then an approximate maximum likelihood estimator is used as a starting point
+for the posterior mode search. If "CD", the Monte-Carlo contrastive divergence estimate is used. See \code{\link[ergm]{ergm}}.}
 
 \item{seed}{integer; seed for the random number generator. See \code{set.seed}.}
 
+\item{map.method}{character; \code{"newton"} (default) or \code{"rm"} (Robbins-Monro, as in Bergm 5).}
+
+\item{map.iters}{count; number of Newton stochastic approximation iterations.}
+
+\item{init}{vector; optional starting value for the posterior mode search. If given,
+the \code{\link[ergm]{ergm}} fit is skipped.}
+
+\item{verbose}{logical; print progress information.}
+
 \item{...}{Additional arguments, to be passed to the ergm function. See \code{\link[ergm]{ergm}}.}
 }
+\value{
+An object of class \code{bergm}, with additional elements
+\code{Theta_star} (estimated posterior mode), \code{Theta_PL}
+(pseudo-posterior mode), \code{W} (curvature adjustment matrix) and
+\code{map.trajectory}.
+}
 \description{
-Function to transform a sample from the pseudo-posterior 
-to one that is approximately sampled from the intractable 
-posterior distribution.
+Function to transform a sample from the pseudo-posterior
+to one that is approximately sampled from the intractable
+posterior distribution (Bouranis, Friel and Maire, 2017).
+}
+\details{
+The pseudo-posterior is sampled by a compiled random-walk Metropolis kernel.
+The mode of the true posterior, which anchors the calibration, is found by
+default with a Newton-type stochastic approximation that uses the
+simulated covariance of the sufficient statistics and a persistent
+auxiliary network chain (\code{map.method = "newton"}); this typically
+converges in about ten iterations, whereas the Robbins-Monro recursion of
+previous versions (\code{map.method = "rm"}) needs hundreds. The
+pseudo-posterior mode is found exactly by Newton-Raphson.
 }
 \examples{
 \dontrun{
 # Load the florentine marriage network
 data(florentine)
-                                 
+
 # Calibrated pseudo-posterior:
 cpp.flo <- bergmC(flomarriage ~ edges + kstar(2),
                   aux.iters  = 500,
@@ -85,7 +117,7 @@ summary(cpp.flo)
 
 }
 \references{
-Bouranis, L., Friel, N., & Maire, F. (2017). Efficient Bayesian inference for exponential 
-random graph models by correcting the pseudo-posterior distribution. 
+Bouranis, L., Friel, N., & Maire, F. (2017). Efficient Bayesian inference for exponential
+random graph models by correcting the pseudo-posterior distribution.
 Social Networks, 50, 98-108. \url{https://arxiv.org/abs/1510.00934}
 }

@@ -6,7 +6,7 @@
 #' among the 36 attorneys (partners and associates) of this firm.
 #' Nodal attributes include: Age, Gender, Office, Practice, School, and Years.
 #' 
-#' @format An oject of class \code{network}.
+#' @format An object of class \code{network}.
 #' 
 #' @references
 #' Lazega, E. (2001), "The Collegial Phenomenon: 
@@ -28,5 +28,4 @@
 #'         title  = "OFFICE")
 #' }
 "lazega"
-
 

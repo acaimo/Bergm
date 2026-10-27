@@ -9,7 +9,7 @@ evidenceCJ(
   prior.mean = NULL,
   prior.sigma = NULL,
   aux.iters = 1000,
-  n.aux.draws = 5,
+  n.aux.draws = 50,
   aux.thin = 50,
   ladder = 30,
   main.iters = 30000,
@@ -19,6 +19,9 @@ evidenceCJ(
   num.samples = 25000,
   seed = 1,
   estimate = c("MLE", "CD"),
+  apl = NULL,
+  cores = 1,
+  verbose = TRUE,
   ...
 )
 }
@@ -28,65 +31,77 @@ of the form  <network> ~ <model terms>
 where <network> is a \code{\link[network]{network}} object
 and <model terms> are \code{ergm-terms}.}
 
-\item{prior.mean}{vector; 
+\item{prior.mean}{vector;
 mean vector of the multivariate Normal prior.
 By default set to a vector of 0's.}
 
-\item{prior.sigma}{square matrix; 
+\item{prior.sigma}{square matrix (or scalar/vector diagonal);
 variance/covariance matrix for the multivariate Normal prior.
 By default set to a diagonal matrix with every diagonal entry equal to 100.}
 
-\item{aux.iters}{count; 
-number of auxiliary iterations used for drawing the first network from the ERGM likelihood. 
-See \code{\link[ergm]{control.simulate.formula}} and \code{\link[Bergm]{ergmAPL}}.}
-
-\item{n.aux.draws}{count; 
-number of auxiliary networks drawn from the ERGM likelihood. 
-See \code{\link[ergm]{control.simulate.formula}} and \code{\link[Bergm]{ergmAPL}}.}
-
-\item{aux.thin}{count; 
-number of auxiliary iterations between network draws after the first network is drawn. 
-See \code{\link[ergm]{control.simulate.formula}} and \code{\link[Bergm]{ergmAPL}}.}
-
-\item{ladder}{count; length of temperature ladder (>=3). 
+\item{aux.iters}{count;
+number of auxiliary iterations used for drawing the first network from the ERGM likelihood.
 See \code{\link[Bergm]{ergmAPL}}.}
 
-\item{main.iters}{count; 
+\item{n.aux.draws}{count;
+number of auxiliary networks drawn from the ERGM likelihood.
+See \code{\link[Bergm]{ergmAPL}}.}
+
+\item{aux.thin}{count;
+number of auxiliary iterations between network draws after the first network is drawn.
+See \code{\link[Bergm]{ergmAPL}}.}
+
+\item{ladder}{count; length of temperature ladder (>=3).
+See \code{\link[Bergm]{ergmAPL}}.}
+
+\item{main.iters}{count;
 number of MCMC iterations after burn-in for the adjusted pseudo-posterior estimation.}
 
-\item{burn.in}{count; 
-number of burn-in iterations at the beginning of an MCMC run 
+\item{burn.in}{count;
+number of burn-in iterations at the beginning of an MCMC run
 for the adjusted pseudo-posterior estimation.}
 
-\item{thin}{count; 
-thinning interval used in the simulation for the adjusted pseudo-posterior estimation. 
-The number of MCMC iterations must be divisible by this value.}
+\item{thin}{count;
+thinning interval used in the simulation for the adjusted pseudo-posterior estimation.}
 
-\item{V.proposal}{count; 
+\item{V.proposal}{count;
 diagonal entry for the multivariate Normal proposal.
 By default set to 1.5.}
 
-\item{num.samples}{integer; 
-number of samples used in the marginal likelihood estimate. 
-Must be lower than \code{main.iters} - \code{burnin}.}
+\item{num.samples}{integer;
+number of proposal draws used in the marginal likelihood estimate.}
 
-\item{seed}{integer; seed for the random number generator. 
-See \code{set.seed} and \code{\link[MCMCpack]{MCMCmetrop1R}}.}
+\item{seed}{integer; seed for the random number generator.}
 
-\item{estimate}{If "MLE" (the default), then an approximate maximum likelihood estimator is returned. If "CD" , the Monte-Carlo contrastive divergence estimate is returned. See \code{\link[ergm]{ergm}}.}
+\item{estimate}{If "MLE" (the default), then an approximate maximum likelihood estimator is returned.
+If "CD" , the Monte-Carlo contrastive divergence estimate is returned. See \code{\link[ergm]{ergm}}.}
 
-\item{...}{additional arguments, to be passed to the ergm function. 
+\item{apl}{optional; an \code{ergmAPL} object for the same model, to reuse
+an existing pseudolikelihood adjustment.}
+
+\item{cores}{count; number of parallel workers used by \code{\link{ergmAPL}}.}
+
+\item{verbose}{logical; print progress information.}
+
+\item{...}{additional arguments, to be passed to the ergm function.
 See \code{\link[ergm]{ergm}} and \code{\link[Bergm]{ergmAPL}}.}
 }
 \description{
-Function to estimate the evidence (marginal likelihood) with Chib and Jeliazkov's method, 
+Function to estimate the evidence (marginal likelihood) with Chib and Jeliazkov's method,
 based on the adjusted pseudolikelihood function.
+}
+\details{
+The adjusted pseudo-posterior is sampled with a compiled random-walk
+Metropolis kernel and all pseudolikelihood evaluations needed by the
+estimator are vectorised in compiled code. The Metropolis-Hastings
+acceptance probabilities in the Chib-Jeliazkov identity are computed with
+the full (pseudo-)posterior, i.e. including the prior.
 }
 \examples{
 \dontrun{
 # Load the florentine marriage network:
 data(florentine)
-                                                
+
 # MCMC sampling and evidence estimation:
 CJE <- evidenceCJ(flomarriage ~ edges + kstar(2),
                   main.iters  = 2000,
@@ -94,24 +109,24 @@ CJE <- evidenceCJ(flomarriage ~ edges + kstar(2),
                   aux.iters   = 500,
                   num.samples = 25000,
                   V.proposal  = 2.5)
-                                   
+
 # Posterior summaries:
 summary(CJE)
 
 # MCMC diagnostics plots:
 plot(CJE)
-    
+
 # Log-evidence (marginal likelihood) estimate:
 CJE$log.evidence
 }
 
 }
 \references{
-Caimo, A., & Friel, N. (2013). Bayesian model selection for exponential random graph models. 
+Caimo, A., & Friel, N. (2013). Bayesian model selection for exponential random graph models.
 Social Networks, 35(1), 11-24. \url{https://arxiv.org/abs/1201.2337}
 
-Bouranis, L., Friel, N., & Maire, F. (2018). Bayesian model selection for exponential 
-random graph models via adjusted pseudolikelihoods. 
-Journal of Computational and Graphical Statistics, 27(3), 516-528. 
+Bouranis, L., Friel, N., & Maire, F. (2018). Bayesian model selection for exponential
+random graph models via adjusted pseudolikelihoods.
+Journal of Computational and Graphical Statistics, 27(3), 516-528.
 \url{https://arxiv.org/abs/1706.06344}
 }

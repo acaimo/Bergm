@@ -21,61 +21,143 @@ bergm(
   cut.reject = FALSE,
   saveEveryX = NULL,
   saveEveryXName = "partialBergmEstimate.rda",
+  seed = NULL,
+  adapt = TRUE,
+  target.accept = 0.25,
+  delayed.acceptance = TRUE,
+  da.inflate = 1.5,
+  cores = 1,
+  log.prior = NULL,
+  prior.decay = c(meanlog = log(0.5), sdlog = 0.75),
+  verbose = TRUE,
   ...
 )
 }
 \arguments{
-\item{formula}{formula;
-an \code{\link[ergm]{ergm}} formula object,
+\item{formula}{formula; an \code{\link[ergm]{ergm}} formula object,
 of the form  <network> ~ <model terms>
 where <network> is a \code{\link[network]{network}} object
-and <model terms> are \code{ergm-terms}.}
+and <model terms> are \code{ergm-terms}. Curved terms (e.g.
+\code{gwesp(fixed = FALSE)}) are supported.}
 
-\item{prior.mean}{vector;
-mean vector of the multivariate Normal prior.
+\item{prior.mean}{vector; mean vector of the multivariate Normal prior.
 By default set to a vector of 0's.}
 
-\item{prior.sigma}{square matrix;
-variance/covariance matrix for the multivariate Normal prior.
-By default set to a diagonal matrix with every diagonal entry equal to 100.}
+\item{prior.sigma}{square matrix, vector or scalar; variance/covariance
+matrix for the multivariate Normal prior. A scalar or vector is interpreted
+as the diagonal. By default a diagonal matrix with every diagonal entry
+equal to 100.}
 
-\item{burn.in}{count;
-number of burn-in iterations for every chain of the population.}
+\item{burn.in}{count; number of burn-in iterations for every chain of the
+population.}
 
-\item{main.iters}{count;
-number of iterations for every chain of the population.}
+\item{main.iters}{count; number of iterations for every chain of the
+population.}
 
-\item{aux.iters}{count;
-number of auxiliary iterations used for network simulation.}
+\item{aux.iters}{count; number of auxiliary iterations used for network
+simulation.}
 
-\item{nchains}{count;
-number of chains of the population MCMC.
-By default set to twice the model dimension (number of model terms).}
+\item{nchains}{count; number of chains of the population MCMC. By default
+twice the number of free model parameters (at least 4), rounded up to a
+multiple of \code{2 * cores} when \code{cores > 1}.}
 
-\item{gamma}{scalar;
-parallel adaptive direction sampling move factor.}
+\item{gamma}{scalar; parallel adaptive direction sampling move factor. When
+\code{adapt = TRUE} this is the starting value, tuned during burn-in.}
 
-\item{V.proposal}{count;
-diagonal entry for the multivariate Normal proposal.
-By default set to 0.0025.}
+\item{V.proposal}{scalar, vector or matrix; covariance of the small Normal
+perturbation added to every ADS move. A scalar is the diagonal entry
+(default 0.0025, as in previous versions).}
 
-\item{startVals}{vector;
-optional starting values for the parameter estimation.}
+\item{startVals}{vector; optional starting values for the parameter
+estimation. Alternatively a previous \code{bergm} fit of the same model, in
+which case every chain continues from where that run ended (and its adapted
+\code{gamma} is reused unless \code{gamma} is given), so a run can be
+extended in stages.}
 
-\item{offset.coef}{vector;
-A vector of coefficients for the offset terms.}
+\item{offset.coef}{vector; a vector of coefficients for the offset terms.}
 
-\item{saveEveryX}{count; If not NULL, the posterior and obtained imputation (only if nImp > 0) will be saved to your working directory at every X iterations.
-Note that this slows down estimation and thus X should not be set too low. By default, the saved data will be in 'partialBergmEstimate.rda' and will be overwritten every X iterations and by other calls of bergm() or bergmM().}
+\item{constraints}{formula; constraints on the support of the network
+distribution, as in \code{\link[ergm]{ergm}}.}
 
-\item{saveEveryXName}{character; the Name of the partial estimation object.
-If you run multiple bergm()/bergmM() calls in the same working directory you should change this name so that the calls do not override each other.}
+\item{thin}{count; thinning interval applied to every chain.}
 
-\item{...}{additional arguments, to be passed to lower-level functions.}
+\item{cut.reject}{logical; if \code{TRUE}, repeated (rejected) draws are
+removed from the pooled sample \code{Theta}. This changes the posterior
+summaries and is only kept for backward compatibility; default \code{FALSE}.}
+
+\item{saveEveryX}{count; if not \code{NULL}, the partial posterior sample is
+saved to \code{saveEveryXName} every \code{saveEveryX} iterations.}
+
+\item{saveEveryXName}{character; file name of the partial estimation object.}
+
+\item{seed}{integer; optional seed for reproducibility (also seeds the
+parallel workers when \code{cores > 1}).}
+
+\item{adapt}{logical; tune \code{gamma} during burn-in towards
+\code{target.accept}. Adaptation stops at the end of burn-in.}
+
+\item{target.accept}{scalar; target acceptance rate for \code{adapt}.}
+
+\item{delayed.acceptance}{logical; if \code{TRUE} (default), proposals are first
+screened with a Gaussian surrogate of the posterior fitted to the second half
+of the burn-in population, and an auxiliary network is simulated only for
+proposals that pass. The second stage corrects for the surrogate so the
+target distribution is unchanged (Christen and Fox, 2005). It needs a
+burn-in of at least 10 iterations; with a shorter burn-in it is switched off
+(silently when left at its default). \code{FALSE} gives the Bergm 5 kernel.}
+
+\item{da.inflate}{scalar; variance inflation factor for the
+delayed-acceptance surrogate (values > 1 make the screen more permissive).}
+
+\item{cores}{count; number of parallel workers. With \code{cores > 1} the
+population is updated in two halves (each half conditionally on the other)
+and the auxiliary simulations of a half run in parallel. Worthwhile when a
+single auxiliary simulation takes more than a few milliseconds.}
+
+\item{log.prior}{function; optional user-defined log prior density taking
+the full (named) parameter vector, with decay parameters on their natural
+(positive) scale, and returning a scalar. Overrides the Normal and
+log-normal priors; return \code{-Inf} outside the support.}
+
+\item{prior.decay}{named vector or list with elements \code{meanlog} and
+\code{sdlog}; log-normal prior for the decay parameters of curved terms
+(e.g. \code{gwesp.decay}, \code{gwdegree.decay}, \code{altkstar.lambda}),
+recycled over all of them or given one value per decay parameter. Default:
+median 0.5, \code{sdlog} 0.75. Decay parameters are sampled on the log
+scale, so they are always positive; \code{prior.mean} and
+\code{prior.sigma} apply to the other parameters and may be given either
+for all parameters (decay entries are ignored) or for the non-decay ones only.}
+
+\item{verbose}{logical; print progress information.}
+
+\item{...}{additional arguments passed to
+\code{\link[ergm]{control.simulate.formula}} to configure the network
+proposal (e.g. \code{MCMC.prop}, \code{MCMC.prop.weights}).}
+}
+\value{
+An object of class \code{bergm} with elements
+\item{Theta}{pooled posterior sample (\code{mcmc}), chains stacked;}
+\item{chains}{the per-chain posterior samples (\code{mcmc.list});}
+\item{AR, AR.chains}{overall and per-chain acceptance rates;}
+\item{ess, Rhat}{effective sample sizes and potential scale reduction factors;}
+\item{fixed}{logical vector flagging fixed (offset) parameters;}
+\item{gamma}{the (adapted) ADS move factor;}
+\item{n.sims}{number of auxiliary network simulations performed;}
+plus the model specification and run settings.
 }
 \description{
-Function to fit Bayesian exponential random graphs models
-using the approximate exchange algorithm.
+Fits Bayesian exponential random graph models with the approximate exchange
+algorithm and a population of interacting chains updated by adaptive
+direction sampling (ADS) (Caimo and Friel, 2011).
+}
+\details{
+Compared with Bergm 5, the sampler draws every auxiliary network through a
+single call to \pkg{ergm}'s compiled sampler on a pre-built network state,
+supports curved ERGM terms, models with a single parameter, custom priors,
+burn-in adaptation of the ADS move factor, delayed acceptance and parallel
+chains. The posterior sample is returned both pooled (\code{Theta}, as in
+previous versions) and per chain (\code{chains}), which enables standard
+convergence diagnostics such as the potential scale reduction factor.
 }
 \examples{
 \dontrun{
@@ -87,10 +169,16 @@ p.flo <- bergm(flomarriage ~ edges + kstar(2),
                burn.in    = 50,
                aux.iters  = 500,
                main.iters = 3000,
-               gamma      = 1.2)
+               gamma      = 1.2,
+               seed       = 1)
 
 # Posterior summaries:
 summary(p.flo)
+
+# Curved model, delayed acceptance and 4 parallel workers:
+p.laz <- bergm(lazega ~ edges + nodematch("Office") + gwesp(0.5, fixed = FALSE),
+               burn.in = 200, main.iters = 2000, aux.iters = 3000,
+               delayed.acceptance = TRUE, cores = 4, seed = 1)
 }
 }
 \references{
@@ -98,5 +186,8 @@ Caimo, A. and Friel, N. (2011), "Bayesian Inference for Exponential Random Graph
 Social Networks, 33(1), 41-55. \url{https://arxiv.org/abs/1007.5192}
 
 Caimo, A. and Friel, N. (2014), "Bergm: Bayesian Exponential Random Graphs in R,"
-Journal of Statistical Software, 61(2), 1-25. \url{https://www.jstatsoft.org/article/view/v061i02}
+Journal of Statistical Software, 61(2), 1-25. \doi{10.18637/jss.v061.i02}
+
+Christen, J. A. and Fox, C. (2005), "Markov chain Monte Carlo using an
+approximation," Journal of Computational and Graphical Statistics, 14(4), 795-810.
 }

@@ -12,6 +12,10 @@ ergmAPL(
   ladder = NULL,
   estimate = c("MLE", "CD"),
   seed = 1,
+  mle = NULL,
+  cores = 1,
+  llk.method = c("bridge", "ladder"),
+  bridge.control = NULL,
   ...
 )
 }
@@ -21,26 +25,68 @@ of the form  <network> ~ <model terms>
 where <network> is a \code{\link[network]{network}} object
 and <model terms> are \code{ergm-terms}.}
 
-\item{aux.iters}{count; number of auxiliary iterations used for drawing the first network from the ERGM likelihood. See \code{\link[ergm]{control.simulate.formula}}.}
+\item{aux.iters}{count; number of auxiliary iterations used for drawing the first network from the ERGM likelihood
+(for the curvature matching and, with \code{llk.method = "ladder"}, at every rung of the ladder). Default 3000.}
 
-\item{n.aux.draws}{count; Number of auxiliary networks drawn from the ERGM likelihood. See \code{\link[ergm]{control.simulate.formula}}.}
+\item{n.aux.draws}{count; number of auxiliary networks drawn from the ERGM likelihood. Default 50.}
 
-\item{aux.thin}{count; Number of auxiliary iterations between network draws after the first network is drawn. See \code{\link[ergm]{control.simulate.formula}}.}
+\item{aux.thin}{count; number of auxiliary iterations between network draws after the first network is drawn. Default 50.}
 
-\item{ladder}{count; Length of temperature ladder (>=3).}
+\item{ladder}{count; length of temperature ladder (>=3) for \code{llk.method = "ladder"}. Default 50.}
 
-\item{estimate}{If "MLE" (the default), then an approximate maximum likelihood estimator is returned. If "CD" , the Monte-Carlo contrastive divergence estimate is returned. See \code{\link[ergm]{ergm}}.}
+\item{estimate}{If "MLE" (the default), then an approximate maximum likelihood estimator is returned.
+If "CD", the Monte-Carlo contrastive divergence estimate is returned. See \code{\link[ergm]{ergm}}.}
 
 \item{seed}{integer; seed for the random number generator. See \code{set.seed}.}
 
+\item{mle}{optional; a fitted \code{\link[ergm]{ergm}} object or a numeric vector of
+coefficients to use as the MLE, skipping the \code{ergm()} fit.}
+
+\item{cores}{count; number of parallel workers for the ladder (at most 2 are used,
+one per sweep).}
+
+\item{llk.method}{character; \code{"bridge"} (default) or \code{"ladder"}, the method
+used to estimate the log-likelihood at the MLE (see Details).}
+
+\item{bridge.control}{optional \code{\link[ergm]{control.ergm.bridge}} list for
+\code{llk.method = "bridge"}.}
+
 \item{...}{Additional arguments, to be passed to the ergm function. See \code{\link[ergm]{ergm}}.}
+}
+\value{
+An object of class \code{ergmAPL}: a list with \code{formula},
+\code{Theta_MLE}, \code{Theta_PL}, \code{W}, \code{logC}, \code{ll_true},
+\code{logztheta} and \code{ll_adjpseudo}.
 }
 \description{
 Function to estimate the transformation parameters for
-adjusting the pseudolikelihood function.
+adjusting the pseudolikelihood function (Bouranis, Friel and Maire, 2018).
+}
+\details{
+The log-likelihood at the MLE, and hence the adjustment constant, is
+estimated by default (\code{llk.method = "bridge"}) by bridge sampling from
+the dyad-independent submodel of the formula, using
+\code{\link[ergm]{ergm.bridge.dindstart.llk}}. The reference model has an
+exact likelihood and is close to the target, which keeps the estimate
+accurate on large networks. \code{llk.method = "ladder"} uses the
+stepping-stone ladder \eqn{\theta_t = t\,\hat\theta_{MLE}}, \eqn{t \in [0,1]},
+of previous versions, traversed in both directions with warm-started chains
+and averaging forward and reverse estimates (which removes most of the bias
+of a single sweep); it needs many rungs when the network is large, because
+the path starts at the uniform random graph. With \code{cores > 1} the two
+sweeps run in parallel. The returned object can be passed to
+\code{\link{evidenceCJ}} and \code{\link{evidencePP}} through their
+\code{apl} argument to avoid recomputing it.
+}
+\examples{
+\dontrun{
+data(florentine)
+apl <- ergmAPL(flomarriage ~ edges + kstar(2))
+apl
+}
 }
 \references{
-Bouranis, L., Friel, N., & Maire, F. (2018). Bayesian model selection for exponential 
-random graph models via adjusted pseudolikelihoods. 
+Bouranis, L., Friel, N., & Maire, F. (2018). Bayesian model selection for exponential
+random graph models via adjusted pseudolikelihoods.
 Journal of Computational and Graphical Statistics, 27(3), 516-528. \url{https://arxiv.org/abs/1706.06344}
 }

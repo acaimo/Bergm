@@ -19,6 +19,9 @@ evidencePP(
   seed = 1,
   temps = NULL,
   estimate = c("MLE", "CD"),
+  apl = NULL,
+  cores = 1,
+  verbose = TRUE,
   ...
 )
 }
@@ -31,14 +34,17 @@ and <model terms> are \code{ergm-terms}.}
 \item{prior.mean}{vector; mean vector of the multivariate Normal prior.
 By default set to a vector of 0's.}
 
-\item{prior.sigma}{square matrix; variance/covariance matrix for the multivariate Normal prior.
+\item{prior.sigma}{square matrix (or scalar/vector diagonal); variance/covariance matrix for the multivariate Normal prior.
 By default set to a diagonal matrix with every diagonal entry equal to 100.}
 
-\item{aux.iters}{count; number of auxiliary iterations used for drawing the first network from the ERGM likelihood. See \code{\link[ergm]{control.simulate.formula}} and \code{\link[Bergm]{ergmAPL}}.}
+\item{aux.iters}{count; number of auxiliary iterations used for drawing the first network from the ERGM likelihood.
+See \code{\link[Bergm]{ergmAPL}}.}
 
-\item{n.aux.draws}{count; number of auxiliary networks drawn from the ERGM likelihood. See \code{\link[ergm]{control.simulate.formula}} and \code{\link[Bergm]{ergmAPL}}.}
+\item{n.aux.draws}{count; number of auxiliary networks drawn from the ERGM likelihood.
+See \code{\link[Bergm]{ergmAPL}}.}
 
-\item{aux.thin}{count; number of auxiliary iterations between network draws after the first network is drawn. See \code{\link[ergm]{control.simulate.formula}} and \code{\link[Bergm]{ergmAPL}}.}
+\item{aux.thin}{count; number of auxiliary iterations between network draws after the first network is drawn.
+See \code{\link[Bergm]{ergmAPL}}.}
 
 \item{ladder}{count; length of temperature ladder (>=3). See \code{\link[Bergm]{ergmAPL}}.}
 
@@ -46,24 +52,37 @@ By default set to a diagonal matrix with every diagonal entry equal to 100.}
 
 \item{burn.in}{count; number of burn-in iterations at the beginning of an MCMC run for the adjusted pseudo-posterior estimation.}
 
-\item{thin}{count; thinning interval used in the simulation for the adjusted pseudo-posterior estimation. The number of MCMC iterations must be divisible by this value.}
+\item{thin}{count; thinning interval used in the simulation for the adjusted pseudo-posterior estimation.}
 
 \item{V.proposal}{count; diagonal entry for the multivariate Normal proposal.
 By default set to 1.5.}
 
-\item{seed}{integer; seed for the random number generator. 
-See \code{set.seed} and \code{\link[MCMCpack]{MCMCmetrop1R}}.}
+\item{seed}{integer; seed for the random number generator.}
 
 \item{temps}{numeric vector; inverse temperature ladder, \eqn{t \in [0,1]}.}
 
-\item{estimate}{If "MLE" (the default), then an approximate maximum likelihood estimator is returned. If "CD" , the Monte-Carlo contrastive divergence estimate is returned. See \code{\link[ergm]{ergm}}.}
+\item{estimate}{If "MLE" (the default), then an approximate maximum likelihood estimator is returned.
+If "CD" , the Monte-Carlo contrastive divergence estimate is returned. See \code{\link[ergm]{ergm}}.}
 
-\item{...}{additional arguments, to be passed to the ergm function. 
+\item{apl}{optional; an \code{ergmAPL} object for the same model, to reuse
+an existing pseudolikelihood adjustment.}
+
+\item{cores}{count; number of parallel workers used by \code{\link{ergmAPL}}.}
+
+\item{verbose}{logical; print progress information.}
+
+\item{...}{additional arguments, to be passed to the ergm function.
 See \code{\link[ergm]{ergm}} and \code{\link[Bergm]{ergmAPL}}.}
 }
 \description{
-Function to estimate the evidence (marginal likelihood) with Power posteriors, 
+Function to estimate the evidence (marginal likelihood) with Power posteriors,
 based on the adjusted pseudolikelihood function.
+}
+\details{
+Each tempered adjusted pseudo-posterior is sampled with a compiled
+random-walk Metropolis kernel, and the zero-variance control variates and
+the corrected trapezoidal rule (Friel, Hurn and Wyse, 2014) are computed
+with vectorised compiled code.
 }
 \examples{
 \dontrun{
@@ -71,26 +90,29 @@ based on the adjusted pseudolikelihood function.
 data(florentine)
 
 PPE <- evidencePP(flomarriage ~ edges + kstar(2),
-                  aux.iters   = 500, 
-                  aux.thin    = 50,   
+                  aux.iters   = 500,
+                  aux.thin    = 50,
                   main.iters  = 2000,
                   burn.in     = 100,
                   V.proposal  = 2.5)
-                                   
+
 # Posterior summaries:
 summary(PPE)
 
 # MCMC diagnostics plots:
 plot(PPE)
-  
-# Log-evidence (marginal likelihood) estimate:             
+
+# Log-evidence (marginal likelihood) estimate:
 PPE$log.evidence
 }
 
 }
 \references{
-Bouranis, L., Friel, N., & Maire, F. (2018). Bayesian model selection for exponential 
-random graph models via adjusted pseudolikelihoods. 
-Journal of Computational and Graphical Statistics, 27(3), 516-528. 
+Bouranis, L., Friel, N., & Maire, F. (2018). Bayesian model selection for exponential
+random graph models via adjusted pseudolikelihoods.
+Journal of Computational and Graphical Statistics, 27(3), 516-528.
 \url{https://arxiv.org/abs/1706.06344}
+
+Friel, N., Hurn, M., & Wyse, J. (2014). Improving power posterior estimation of
+statistical evidence. Statistics and Computing, 24(5), 709-723.
 }
