@@ -121,6 +121,7 @@ ergmAPL <- function(formula,
   } else {
     z <- .simulate_state(st, theta_mle, burnin = aux.iters, samplesize = n.aux.draws,
                          interval = aux.thin)
+    if (is.null(z)) stop(.sim_limit_msg, call. = FALSE)
     W <- .apl_W(stats::cov(z$s), .pl_hess(pl, theta_pl))
   }
   adjust.info <- list(Theta_MLE = theta_mle, Theta_PL = theta_pl, W = W)
@@ -173,6 +174,7 @@ ergmAPL <- function(formula,
   for (i in idx) {
     z <- .simulate_state(state, path[i] * theta, burnin = burnin, samplesize = n,
                          interval = interval)
+    if (is.null(z)) stop(.sim_limit_msg, call. = FALSE)
     state <- update(state, state = z$state)
     U[[i]] <- drop(z$s %*% theta)
   }

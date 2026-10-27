@@ -171,13 +171,14 @@ bergmM <- function(formula,
                    ...) {
   clock.start <- Sys.time()
   this.call <- match.call()
+  .check_iters(main.iters, thin)
   .with_seed(seed)
   control.args <- list(...)
   if (!isTRUE(imputeLast))
     message("'imputeLast = FALSE' is ignored: imputations use each chain's current parameter.")
 
   y <- ergm.getnetwork(formula)
-  am <- as.matrix.network(y, matrix.type = "adjacency")
+  am <- .adjacency(y)
   has_missing <- anyNA(am)
   has_attr <- !is.null(imputeData)
   if (has_attr && is.null(attributeNames))
@@ -196,7 +197,8 @@ bergmM <- function(formula,
   if (has_missing) {
     idx <- which(is.na(am), arr.ind = TRUE)
     if (!is.directed(y)) idx <- idx[idx[, 1] < idx[, 2], , drop = FALSE]
-    missing_el <- as.edgelist(idx, n = network.size(y), directed = is.directed(y))
+    missing_el <- as.edgelist(idx, n = network.size(y), directed = is.directed(y),
+                              bipartite = if (is.bipartite(y)) y %n% "bipartite" else FALSE)
   }
   if (is.null(missingUpdate)) missingUpdate <- max(1L, sum(is.na(am)))
 
@@ -284,7 +286,7 @@ bergmM <- function(formula,
 
   checkpoint <- NULL
   if (!is.null(saveEveryX))
-    checkpoint <- list(at = seq(saveEveryX, burn.in + main.iters, by = saveEveryX),
+    checkpoint <- list(at = .checkpoint_at(saveEveryX, burn.in + main.iters),
                        file = saveEveryXName,
                        extra = function() list(impNets = impNets, impAttr = impAttr))
 
@@ -340,7 +342,7 @@ bergmM <- function(formula,
 
 .imputeAttributes <- function(y, attributeNames, imputeData, miceIt = 5) {
   imputeData2 <- imputeData
-  y2n <- as.matrix.network(y, matrix.type = "adjacency")
+  y2n <- .adjacency(y)
   mode_among <- function(v, alters) {
     tb <- table(v[alters])
     if (length(tb) == 0L || all(tb == 0)) NA_character_ else names(which.max(tb))

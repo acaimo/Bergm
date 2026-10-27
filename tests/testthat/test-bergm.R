@@ -119,3 +119,43 @@ test_that("an unidentified decay parameter recovers its prior", {
   expect_lt(abs(mean(g) / 0.75 - 1), 0.1)
   expect_lt(abs(sd(g) / sqrt(3 / 16) - 1), 0.15)
 })
+
+test_that("parallel chains work with delayed acceptance and single-proposal halves", {
+  skip_on_cran()
+  expect_equal(lengths(Bergm:::.chunk(1L, 4)), 1L)
+  expect_equal(lengths(Bergm:::.chunk(1:3, 1)), 3L)
+  expect_equal(unlist(Bergm:::.chunk(1:7, 3)), 1:7)
+  expect_length(Bergm:::.chunk(integer(0), 2), 0)
+  data(florentine, package = "ergm")
+  p <- bergm(flomarriage ~ edges + kstar(2), burn.in = 20, main.iters = 40,
+             aux.iters = 100, cores = 2, delayed.acceptance = TRUE, seed = 1,
+             verbose = FALSE)
+  expect_s3_class(p, "bergm")
+  expect_false(is.null(p$delayed.acceptance))
+})
+
+test_that("parallel chains with delayed acceptance keep moving", {
+  skip_on_cran()
+  data(florentine, package = "ergm")
+  a <- suppressWarnings(bergm(flomarriage ~ edges + kstar(2), burn.in = 40, main.iters = 80,
+                              aux.iters = 200, cores = 2, seed = 1, verbose = FALSE))
+  expect_false(is.null(a$delayed.acceptance))
+  expect_gt(a$AR, 0.05)
+  expect_lt(a$delayed.acceptance$stage1.rejections, 0.9 * 80 * a$nchains)
+})
+
+test_that("chunking keeps order for any number of jobs and workers", {
+  for (n in 0:7) for (k in 1:4) {
+    ch <- Bergm:::.chunk(seq_len(n), k)
+    expect_identical(as.integer(unlist(ch)), seq_len(n))
+    expect_lte(length(ch), max(1L, min(k, n)))
+  }
+})
+
+test_that("argument checks for iterations and checkpoints", {
+  data(florentine, package = "ergm")
+  expect_error(bergm(flomarriage ~ edges, main.iters = 3, thin = 5, verbose = FALSE),
+               "at least 'thin'")
+  expect_identical(Bergm:::.checkpoint_at(500, 300), integer(0))
+  expect_identical(Bergm:::.checkpoint_at(100, 350), c(100L, 200L, 300L))
+})

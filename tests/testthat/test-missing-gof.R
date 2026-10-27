@@ -46,3 +46,18 @@ test_that("bergmM imputes missing nodal attributes", {
   expect_length(m$impAttr, 2)
   expect_false(anyNA(m$impAttr[[1]]$Practice))
 })
+
+test_that("bergmM imputes the right dyads in a bipartite network", {
+  skip_if_not_installed("latentnet")
+  data(davis, package = "latentnet")
+  y <- davis
+  obs <- as.matrix(y, matrix.type = "adjacency")
+  y[1, 19] <- NA
+  y[5, 25] <- NA
+  m <- bergmM(y ~ edges + gwb2degree(0.7, fixed = TRUE), burn.in = 10, main.iters = 30,
+              aux.iters = 200, nImp = 2, seed = 1, verbose = FALSE)
+  imp <- as.matrix(m$impNets[[1]], matrix.type = "adjacency")
+  keep <- !is.na(as.matrix(y, matrix.type = "adjacency"))
+  expect_equal(imp[keep], obs[keep])
+  expect_equal(dim(imp), dim(obs))
+})

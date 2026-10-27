@@ -68,6 +68,21 @@ opt-in through new arguments, except where noted under "Changed defaults".
 * `plot()` and `bgof()` draw in grayscale: chains in shades of gray, observed
   statistics as a thick black line, 5%/95% posterior predictive bands dashed.
 
+* `bergm(cores > 1)` with delayed acceptance: the surrogate's mean was
+  overwritten by a loop index after the first parallel update, so almost every
+  proposal was rejected at the first stage and the chains stopped moving.
+* `bergm(cores > 1)`: distributing a single proposal to the workers failed with
+  "invalid number of intervals".
+* `bergmM()`: missing ties in bipartite networks were mapped to the wrong
+  dyads (and the attribute-imputation predictors used the wrong matrix).
+* `bergm()`/`bergmM()`: `saveEveryX` larger than the run length no longer
+  fails; `main.iters < thin` is rejected with a clear message.
+* `evidenceCJ()`: the posterior ordinate is computed on the log scale, which
+  avoids underflow of the proposal densities in higher dimensions.
+* `bgof()`/`simulate()`: posterior predictive simulation uses the same
+  `gw.cutoff` as the fit; bipartite networks give a clear error in `bgof()`;
+  failed simulations report the actual ergm limit that was exceeded.
+
 ## Changed defaults
 
 * `bergm()`: `delayed.acceptance = TRUE`. With a burn-in shorter than 10

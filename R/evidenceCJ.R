@@ -157,12 +157,11 @@ evidenceCJ <- function(formula,
   theta.g <- if (num.samples >= nrow(draws)) draws else
     draws[sample.int(nrow(draws), num.samples), , drop = FALSE]
   U.prop <- .chol_pd(S.prop)
-  q.g <- exp(.dmvn_log(theta.g, thetahat, U.prop))
-  alpha.g <- pmin(1, exp(log.post - logpost(theta.g)))
+  log.num <- pmin(0, log.post - logpost(theta.g)) + .dmvn_log(theta.g, thetahat, U.prop)
   theta.j <- .rmvn(num.samples, thetahat, U.prop)
-  alpha.j <- pmin(1, exp(logpost(theta.j) - log.post))
-  pi.hat <- mean(alpha.g * q.g) / mean(alpha.j)
-  logEvidence <- apl$logC + log.post - log(pi.hat)
+  log.den <- pmin(0, logpost(theta.j) - log.post)
+  log.pi.hat <- .logmeanexp(log.num) - .logmeanexp(log.den)
+  logEvidence <- apl$logC + log.post - log.pi.hat
 
   ess <- round(coda::effectiveSize(T0), 0)
   names(ess) <- specs

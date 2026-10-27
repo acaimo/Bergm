@@ -154,7 +154,11 @@ bgof <- function(x,
   y <- ergm.getnetwork(formula)
   n <- network.size(y)
   directed <- is.directed(y)
-  model <- ergm_model(formula, y)
+  if (gof && is.bipartite(y))
+    stop("bgof() does not support bipartite networks; use simulate() on the fit ",
+         "to compute posterior predictive statistics.", call. = FALSE)
+  topts <- .term_opts(list(), n)$term.options
+  model <- ergm_model(formula, y, term.options = topts)
   q_model <- nparam(model, canonical = TRUE)
   has_geodist <- exists("InitErgmTerm.geodistdist", envir = asNamespace("ergm"))
   mon <- NULL
@@ -168,7 +172,8 @@ bgof <- function(x,
   }
   sim <- suppressMessages(simulate(formula, coef = rep(0, nparam(model, canonical = FALSE)),
                                    nsim = 1, constraints = x$constraints %||% ~.,
-                                   monitor = mon, return.args = "ergm_state"))
+                                   monitor = mon, return.args = "ergm_state",
+                                   control = control.simulate.formula(term.options = topts)))
   full <- sim$object
   st <- ergm_state_send(full)
   q_tot <- nparam(full$model, canonical = TRUE)
@@ -179,7 +184,7 @@ bgof <- function(x,
   need_states <- networks || (gof && !has_geodist)
   run <- function(eta) {
     z <- .simulate_state(st, eta, burnin = aux.iters)
-    if (is.null(z)) stop("Network simulation exceeded the maximum number of edges.", call. = FALSE)
+    if (is.null(z)) stop(.sim_limit_msg, call. = FALSE)
     if (need_states) list(s = z$s[1L, ], state = z$state) else list(s = z$s[1L, ])
   }
   if (cores > 1 && !need_states) {
@@ -189,7 +194,10 @@ bgof <- function(x,
     chunks <- .chunk(seq_along(etas), length(cl))
     res <- parallel::clusterApply(cl, lapply(chunks, function(ix) etas[ix]), .worker_sim,
                                   burnin = aux.iters, key = "pp_state")
-    res <- lapply(unlist(res, recursive = FALSE), function(m) list(s = m[1L, ]))
+    res <- lapply(unlist(res, recursive = FALSE), function(m) {
+      if (is.null(m)) stop(.sim_limit_msg, call. = FALSE)
+      list(s = m[1L, ])
+    })
   } else {
     res <- lapply(etas, run)
   }
@@ -238,6 +246,8 @@ plot.bgof <- function(x, n.deg = NULL, n.dist = NULL, n.esp = NULL,
   op <- graphics::par(no.readonly = TRUE)
   on.exit(graphics::par(op), add = TRUE)
   panel <- function(obs, sim, nshow, xlab, ylab, labels) {
+    nshow <- max(1L, min(nshow, length(obs)))
+    labels <- labels[seq_len(nshow)]
     keep <- seq_len(nshow)
     M <- sim[keep, , drop = FALSE]
     q5 <- apply(M, 1, stats::quantile, probs = 0.05)
@@ -252,7 +262,7 @@ plot.bgof <- function(x, n.deg = NULL, n.dist = NULL, n.esp = NULL,
   dist_panel <- function() {
     B <- cbind(x$obs.dist, x$sim.dist)
     nb <- nrow(B)
-    nd <- n.dist %||% (nb - 1)
+    nd <- max(2L, min(n.dist %||% (nb - 1), nb))
     rows <- c(seq_len(nd - 1), nb)
     panel(B[rows, 1], B[rows, -1, drop = FALSE], length(rows), "minimum geodesic distance",
           "proportion of dyads", c(seq_len(nd - 1), "NR"))

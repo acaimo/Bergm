@@ -151,6 +151,7 @@ bergmC <- function(formula,
   if (verbose) message(" > Curvature Adjustment")
   z <- .simulate_state(map$state, theta_star, burnin = aux.iters,
                        samplesize = n.aux.draws, interval = aux.thin)
+  if (is.null(z)) stop(.sim_limit_msg, call. = FALSE)
   chol.true.posterior <- .chol_pd(stats::cov(z$s) + prior$prec)
   chol.PL.posterior <- .chol_pd(prior$prec - H_pl)
   W <- backsolve(chol.PL.posterior, chol.true.posterior)

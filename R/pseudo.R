@@ -94,7 +94,7 @@
     list(th = th, g = g, H = H, md = md, state = update(state, state = z$state))
   }
   cur <- sample_at(as.numeric(init), st, aux.iters)
-  if (is.null(cur)) stop("Network simulation exceeded the maximum number of edges.", call. = FALSE)
+  if (is.null(cur)) stop(.sim_limit_msg, call. = FALSE)
   rewarm <- max(aux.thin, aux.iters %/% 4L)
   radius <- 1
   traj <- matrix(NA_real_, iters, p)
@@ -129,6 +129,7 @@
   for (i in 2:rm.iters) {
     z <- .simulate_state(st, theta[i - 1, ], burnin = aux.iters,
                          samplesize = n.aux.draws, interval = aux.thin)
+    if (is.null(z)) stop(.sim_limit_msg, call. = FALSE)
     estgrad <- -colMeans(sweep(z$s, 2, sy)) - drop(prior$prec %*% (theta[i - 1, ] - prior$mean))
     theta[i, ] <- theta[i - 1, ] + (rm.a / i) * (rm.alpha + estgrad)
   }

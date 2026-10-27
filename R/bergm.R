@@ -183,6 +183,7 @@ bergm <- function(formula,
 
   clock.start <- Sys.time()
   this.call <- match.call()
+  .check_iters(main.iters, thin)
   .with_seed(seed)
 
   setup <- .ergm_setup(formula, constraints, control.args = list(...))
@@ -257,7 +258,7 @@ bergm <- function(formula,
 
   checkpoint <- NULL
   if (!is.null(saveEveryX))
-    checkpoint <- list(at = seq(saveEveryX, burn.in + main.iters, by = saveEveryX),
+    checkpoint <- list(at = .checkpoint_at(saveEveryX, burn.in + main.iters),
                        file = saveEveryXName, extra = function() list())
 
   if (verbose) message(" > MCMC start")
@@ -303,6 +304,8 @@ bergm <- function(formula,
     }
     th
   }
+  if (!is.null(startVals) && length(startVals) != p)
+    stop(sprintf("'startVals' must have length %d.", p), call. = FALSE)
   if (any(dec) && !is.null(startVals) && any(startVals[dec] <= 0))
     stop("Decay parameters in 'startVals' must be positive.", call. = FALSE)
   theta <- draw(nchains, 1)

@@ -209,6 +209,9 @@
   function(theta) ergm.eta(theta, etamap)
 }
 
+.sim_limit_msg <- paste("Network simulation exceeded an ergm limit (edge count or term cut-off);",
+                        "the model is near-degenerate at these parameter values.")
+
 .SLAVE_CONTROL <- list(MCMC.maxedges = Inf, MCMC.save_networks = FALSE)
 
 .simulate_state <- function(st, eta, burnin, samplesize = 1L, interval = 1L) {
@@ -299,13 +302,6 @@
   })
 }
 
-.worker_sim_states <- function(jobs, burnin, samplesize = 1L, interval = 1L) {
-  lapply(jobs, function(j) {
-    z <- .simulate_state(j$state, j$eta, burnin, samplesize, interval)
-    if (is.null(z)) NULL else z$s
-  })
-}
-
 .start_cluster <- function(cores, seed = NULL) {
   cl <- parallel::makePSOCKcluster(cores)
   this_lib <- dirname(getNamespaceInfo("Bergm", "path"))
@@ -318,13 +314,26 @@
 }
 
 .chunk <- function(x, k) {
-  k <- max(1L, min(k, length(x)))
-  split(x, cut(seq_along(x), k, labels = FALSE))
+  n <- length(x)
+  if (n == 0L) return(list())
+  k <- max(1L, min(as.integer(k), n))
+  unname(split(x, ceiling(seq_len(n) * k / n)))
 }
 
-.par_lapply <- function(X, FUN, ..., cl = NULL) {
-  if (is.null(cl) || length(X) <= 1L) return(lapply(X, FUN, ...))
-  parallel::clusterApplyLB(cl, X, FUN, ...)
+.checkpoint_at <- function(every, total) {
+  every <- as.integer(every)
+  if (is.na(every) || every < 1L) stop("'saveEveryX' must be a positive integer.", call. = FALSE)
+  seq_len(total %/% every) * every
+}
+
+.check_iters <- function(main.iters, thin) {
+  if (main.iters < thin)
+    stop("'main.iters' must be at least 'thin'.", call. = FALSE)
+  invisible(TRUE)
+}
+
+.adjacency <- function(y) {
+  as.matrix.network(y, matrix.type = "adjacency", expand.bipartite = is.bipartite(y))
 }
 
 .with_seed <- function(seed) {

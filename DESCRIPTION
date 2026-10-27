@@ -7,12 +7,12 @@ Authors@R: c(
     person("Alberto", "Caimo", email = "alberto.caimo1@ucd.ie", role = c("aut", "cre")),
     person("Lampros", "Bouranis", role = "aut"),
     person("Robert", "Krause", role = "aut"),
-    person("Isabella", "Gollini", role = "aut"),
     person("Nial", "Friel", role = "ctb"))
 Description: Bayesian analysis for exponential random graph models using
     advanced computational algorithms: the approximate exchange algorithm
     with adaptive direction sampling (optionally adaptive, delayed-acceptance
-    and parallel), calibrated pseudo-posteriors, Bayesian
+    and parallel), calibrated pseudo-posteriors, adjusted pseudolikelihoods,
+    evidence estimation via Chib-Jeliazkov and power posteriors, Bayesian
     data augmentation for missing network data, and Bayesian goodness-of-fit
     diagnostics. More information can be found at:
     <https://acaimo.github.io/Bergm/>.
@@ -29,10 +29,9 @@ Language: en-US
 LazyData: true
 RoxygenNote: 7.3.1
 NeedsCompilation: yes
-Packaged: 2026-10-26 21:15:38 UTC; root
+Packaged: 2026-10-27 17:10:38 UTC; root
 Author: Alberto Caimo [aut, cre],
   Lampros Bouranis [aut],
   Robert Krause [aut],
-  Isabella Gollini [aut],
   Nial Friel [ctb]
 Maintainer: Alberto Caimo <alberto.caimo1@ucd.ie>

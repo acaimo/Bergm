@@ -138,10 +138,10 @@
           eps <- eps_all[idx]
           ss <- sim_many(grp[idx], eps)
           if (in_burn) n_sim_burn <- n_sim_burn + length(idx) else n_sim <- n_sim + length(idx)
-          for (m in seq_along(idx)) {
-            j <- idx[m]
+          for (r in seq_along(idx)) {
+            j <- idx[r]
             h <- grp[j]
-            if (finish(h, props[[j]], eps[[m]], lpps[j], s1s[j], ss[[m]])) {
+            if (finish(h, props[[j]], eps[[r]], lpps[j], s1s[j], ss[[r]])) {
               okv[j] <- TRUE
               acc_iter <- acc_iter + 1L
               if (!in_burn) acc[h] <- acc[h] + 1L
@@ -164,15 +164,11 @@
       if (!is.null(da) && k == burn.in) {
         S <- stats::cov(da_store) * da$inflate
         if (all(is.finite(S)) && .is_pd(S)) {
-          m <- colMeans(da_store)
-          U <- chol(S)
-          sur <- function(th) {
-            r <- backsolve(U, th[free] - m, transpose = TRUE)
-            -0.5 * sum(r * r)
-          }
+          sur_mean <- colMeans(da_store)
+          sur <- .gauss_surrogate(sur_mean, chol(S), free)
           for (h in seq_len(nch)) sur_cur[h] <- sur(theta[, h])
           use_da <- TRUE
-          da$mean <- m
+          da$mean <- sur_mean
           da$cov <- S
         } else {
           warning("Delayed-acceptance surrogate could not be fitted (degenerate burn-in); ",
@@ -195,6 +191,14 @@
   list(Theta = Theta, acc = acc, gamma = exp(log_gamma), n_prop = n_prop,
        n_sim = n_sim, n_sim_burn = n_sim_burn, n_da_reject = n_da_reject, n_fail = n_fail,
        da = if (use_da) da else NULL, theta = out_fn(theta), sy = sy)
+}
+
+.gauss_surrogate <- function(mean, U, free) {
+  force(mean); force(U); force(free)
+  function(th) {
+    r <- backsolve(U, th[free] - mean, transpose = TRUE)
+    -0.5 * sum(r * r)
+  }
 }
 
 .bergm_output <- function(res, setup, offset, prior, main.iters, thin, cut.reject,
